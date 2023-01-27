@@ -32,30 +32,22 @@ except IOError: # if port is already opened, close it and open it again and prin
 
 ##while True: # do something...
 
-#class taskSerialReceive():
-    #myRxBuffer = str('myRxBuffer');
-    #while (True):
-    
-        
-    # myRxBuffer = ser.read()
-    #    textbox.Text += myRxBuffer;
-    #    ser.sleep(100)
-    
+
 def handle_data(data):
     print(data)
+    
+    
 
-def read_from_port(ser):
+def read_from_port(ser, anApp):
 
         while True:
-           #print("test")
+          # print("test")
+          # print(textbox1.insert)
            reading = ser.readline().decode()
            handle_data(reading)
+           anApp.textbox1.insert(0.1, reading)
 
-thread = threading.Thread(target=read_from_port, args=(ser,))
-thread.start()
-       
- 
-
+         
 
 
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
@@ -66,6 +58,7 @@ customtkinter.set_default_color_theme("green")  # Themes: "blue" (standard), "gr
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+
 
         
         # configure window
@@ -125,6 +118,7 @@ class App(customtkinter.CTk):
        # self.textbox = customtkinter.CTkTextbox(self, width=250)
         self.textbox1 = customtkinter.CTkTextbox(self, width=250)
         self.textbox1.grid(row=0, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.textbox1.insert('0.1', handle_data)
 
         # create tabview
         self.tabview = customtkinter.CTkTabview(self, width=250)
@@ -199,22 +193,18 @@ class App(customtkinter.CTk):
         #self.optionmenu_1.set("CTkOptionmenu")
         self.combobox_1.set("Command List")
 
+        thread = threading.Thread(target=read_from_port, args=(ser,self))
+        thread.start()
+
+
+
     # COMMANDS FOR FUNCTIONS
 
     def comboBoxsend(self):
-      # textbox1 = self.textbox1.get("1.0",'end-1c')
        command_option = self.combobox_1.get()
        ser.write(command_option.encode())
-        #time.sleep(100)
-       # myRxBuffer = str('myRxBuffer');
-       #while (ser.isOpen):
-       #   if (ser.inWaiting() > 0):
-       #       data_str = ser.read(ser.inWaiting()).decode('ascii')
-       #       Textbox.textbox1.insert(data_str)
-       #       print(data_str, end='')
-       #       time.sleep(0.01) 
        
-           
+
 
     def open_input_dialog_event(self):
         dialog = customtkinter.CTkInputDialog(text="Type in a command or select from the list:", title="CTkInputDialog")
@@ -249,6 +239,30 @@ class App(customtkinter.CTk):
 
     def onExit(self):
         self.quit()
+
+    def handleIncomingText(self, reading):
+        self.textbox1.insert(reading)
+
+    def handle_data(data):
+        print(data)
+    
+    
+
+    def read_from_port(ser, anApp):
+
+        while True:
+          # print("test")
+          # print(textbox1.insert)
+           reading = ser.readline().decode()
+           anApp.handleIncomingText(reading)
+           handle_data(reading)
+           
+
+          
+
+
+       
+ 
 
     
         
