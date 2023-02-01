@@ -22,7 +22,6 @@ try:
   )
   ser.isOpen() # try to open port, if possible print message and proceed with 'while True:'
 
-  #ser.write("help") # The idea is to send command - this is an example
   print ("port is opened!")
 
 except IOError: # if port is already opened, close it and open it again and print message
@@ -75,37 +74,40 @@ class App(customtkinter.CTk):
         item = Menu(menu)
         option = Menu(self)
         about = Menu(self)
-        item.add_command(label='Clear')
+        item.add_command(label='Clear', command=self.clearTextBox)
         item.add_command(label='Build')
         option.add_command(label='Import')
         option.add_command(label='Exit', command=self.onExit())
         menu.add_cascade(label='File', menu=item)
         menu.add_cascade(label='Options', menu=option)
         menu.add_cascade(label='About', menu=about)
-        about.add_command(label='About Device Simulator', command=self.about_device_simulator)
+        about.add_command(label='About Device Simulator', command=self.aboutDeviceSimulator)
         
         self.config(menu=menu)
 
         # create sidebar frame with widgets
-        self.sidebar_frame = customtkinter.CTkFrame(self, width=140, corner_radius=0)
-        self.sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(4, weight=1)
-        self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="Start Comms Connection", font=customtkinter.CTkFont(size=20, weight="bold"))
-        self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
-        self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame, text="Start", command=self.startSerCommsEvent)
+        self.serialCommsFrame = customtkinter.CTkFrame(self, width=140, corner_radius=0)
+        self.serialCommsFrame.grid(row=0, column=0, rowspan=4, sticky="nsew")
+        self.serialCommsFrame.grid_rowconfigure(4, weight=1)
+        self.startComsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Start Comms Connection", font=customtkinter.CTkFont(size=20, weight="bold"))
+        self.startComsLabel.grid(row=0, column=0, padx=20, pady=(20, 10))
+        self.sidebar_button_1 = customtkinter.CTkButton(self.serialCommsFrame, text="Start", command=self.startSerCommsEvent)
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
-        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, text="Stop", command=self.stopSerCommsEvent)
+        self.sidebar_button_2 = customtkinter.CTkButton(self.serialCommsFrame, text="Stop", command=self.stopSerCommsEvent)
         self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
-        self.appearance_mode_label = customtkinter.CTkLabel(self.sidebar_frame, text="Appearance Mode:", anchor="w")
-        self.appearance_mode_label.grid(row=5, column=0, padx=20, pady=(10, 0))
-        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["Light", "Dark"],
-                                                                       command=self.change_appearance_mode_event)
-        self.appearance_mode_optionemenu.grid(row=6, column=0, padx=20, pady=(10, 10))
-        self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="UI Scaling:", anchor="w")
-        self.scaling_label.grid(row=7, column=0, padx=20, pady=(10, 0))
-        self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["80%", "90%", "100%", "110%", "120%"],
-                                                               command=self.change_scaling_event)
-        self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 20))
+
+        
+        self.label_radio_group = customtkinter.CTkLabel(self.serialCommsFrame, text="Serial Comms Connection")
+        self.label_radio_group.grid(row=5, column=0, columnspan=1, padx=10, pady=10, sticky="")
+        self.comportCombo = customtkinter.CTkComboBox(self.serialCommsFrame, 
+                                                    values=["COM 8", "COM 9"])
+        self.comportCombo.grid(row=6, column=0, pady=10, padx=20, sticky="n")
+        self.baudrateCombo = customtkinter.CTkComboBox(self.serialCommsFrame,
+                                                    values=["115200", "9900"])
+        self.baudrateCombo.grid(row=7, column=0, pady=10, padx=20, sticky="n")
+        self.bytessCombo = customtkinter.CTkComboBox(self.serialCommsFrame,
+                                                    values=["Eight Bits"])
+        self.bytessCombo.grid(row=8, column=0, pady=10, padx=20, sticky="n")
 
        # TREE VIEW ADDED HERE
         self.treeview = ttk.Treeview(self, height=6, show="tree")
@@ -120,13 +122,13 @@ class App(customtkinter.CTk):
         
 
         # create tabview
-        self.tabview = customtkinter.CTkTabview(self, width=250)
-        self.tabview.grid(row=0, column=3, padx=(20, 0), pady=(20, 0), sticky="nsew")
-        self.tabview.add("Command Options")
-        self.tabview.add("Trigger Fire")
-        self.tabview.tab("Command Options").grid_columnconfigure(0, weight=1)  # configure grid of individual tabs
+        self.evenOptions = customtkinter.CTkTabview(self, width=250)
+        self.evenOptions.grid(row=0, column=3, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.evenOptions.add("Command Options")
+        self.evenOptions.add("Trigger Fire")
+        self.evenOptions.tab("Command Options").grid_columnconfigure(0, weight=1)  # configure grid of individual tabs
         
-        self.combobox_1 = customtkinter.CTkComboBox(self.tabview.tab("Command Options"),
+        self.combobox_1 = customtkinter.CTkComboBox(self.evenOptions.tab("Command Options"),
                                                     values=["an <n> <c> [r]          : Set analogue for dev <n> channel <c> [to r]",
                                                             "ar <n>                  : Show analogue readings for device <n>", "ramp <n> <c> <s> <f> <d>: Ramp analogue channel c from s to f"
                                                             "scale <n> <c> <s>       : Scale analogue channel c", "dc <n>                  : Show device <n> config", "de <n>                  : Dump eeprom of device <n>"
@@ -139,40 +141,41 @@ class App(customtkinter.CTk):
                                                             "save backup <file>      : Save devices backup file (bin)", "save config <file/->    : Save devices config file/output (text)",
                                                             "debug n/save            : Set debug level to n or save current to flash", "time [hh:mm:ss dd/mm/yy]: Set the time", "Play 1 0\n\r", "help\n\r"])
         self.combobox_1.grid(row=1, column=0, padx=20, pady=(10, 10))
-        self.string_input_button = customtkinter.CTkButton(self.tabview.tab("Command Options"), text="Enter Command Manually",
-                                                           command=self.open_input_dialog_event)
+        self.string_input_button = customtkinter.CTkButton(self.evenOptions.tab("Command Options"), text="Enter Command Manually",
+                                                           command=self.manualInputCommand)
         self.string_input_button.grid(row=2, column=0, padx=20, pady=(10, 10))
-        self.send_command_button = customtkinter.CTkButton(self.tabview.tab("Command Options"), text="Send Command",
+        self.send_command_button = customtkinter.CTkButton(self.evenOptions.tab("Command Options"), text="Send Command",
                                                            command=self.comboBoxsend1)
         self.send_command_button.grid(row=3, column=0, padx=20, pady=(10, 10))
      
         # Trigger Fire Tab Options
-        self.combobox_fire = customtkinter.CTkComboBox(self.tabview.tab("Trigger Fire"),
+        self.combobox_fire = customtkinter.CTkComboBox(self.evenOptions.tab("Trigger Fire"),
                                                     values=["help\n\r"])
         self.combobox_fire.grid(row=1, column=0, padx=20, pady=(10, 10))
-        self.send_command_button1 = customtkinter.CTkButton(self.tabview.tab("Trigger Fire"), text="Send Command",
+        self.send_command_button1 = customtkinter.CTkButton(self.evenOptions.tab("Trigger Fire"), text="Send Command",
                                                            command=self.comboBoxsend2)
         self.send_command_button1.grid(row=3, column=0, padx=20, pady=(10, 10))
 
 
 
 
-        # create radiobutton frame
-        self.radiobutton_frame = customtkinter.CTkFrame(self)
-        self.radiobutton_frame.grid(row=1, column=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
-        self.radio_var = tkinter.IntVar(value=0)
-        self.label_radio_group = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Serial Comms Connection")
-        self.label_radio_group.grid(row=0, column=2, columnspan=1, padx=10, pady=10, sticky="")
-        self.combobox_2 = customtkinter.CTkComboBox(master=self.radiobutton_frame,
-                                                    values=["COM 8", "COM 9"])
-        self.combobox_2.grid(row=1, column=2, pady=10, padx=20, sticky="n")
-        self.combobox_3 = customtkinter.CTkComboBox(master=self.radiobutton_frame,
-                                                    values=["115200", "9900"])
-        self.combobox_3.grid(row=2, column=2, pady=10, padx=20, sticky="n")
-        self.combobox_4 = customtkinter.CTkComboBox(master=self.radiobutton_frame,
-                                                    values=["Eight Bits"])
-        self.combobox_4.grid(row=3, column=2, pady=10, padx=20, sticky="n")
-       
+        # create uiOptions frame
+        self.uiOptions_frame = customtkinter.CTkFrame(self, width=250)
+        self.uiOptions_frame.grid(row=1, column=3, padx=(20, 0), pady=(20, 0))
+
+        self.appearance_mode_label = customtkinter.CTkLabel(self.uiOptions_frame, text="Appearance Mode:", anchor="w")
+        self.appearance_mode_label.grid(row=0, column=2, padx=20, pady=(10, 0))
+        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.uiOptions_frame, values=["Light", "Dark"],
+                                                                       command=self.change_appearance_mode_event)
+        self.appearance_mode_optionemenu.grid(row=1, column=2, padx=20, pady=(10, 10))
+        self.scaling_label = customtkinter.CTkLabel(self.uiOptions_frame, text="UI Scaling:", anchor="w")
+        self.scaling_label.grid(row=2, column=2, padx=20, pady=(10, 10))
+        self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.uiOptions_frame, values=["80%", "90%", "100%", "110%", "120%"],
+                                                               command=self.change_scaling_event)
+        self.scaling_optionemenu.grid(row=3, column=2, padx=20, pady=(10, 10))
+
+
+        # These set the default displayed value in the corresponding widgets
         
         self.appearance_mode_optionemenu.set("Dark")
         self.scaling_optionemenu.set("100%")
@@ -194,7 +197,7 @@ class App(customtkinter.CTk):
         command_option_2 = self.combobox_fire.get()
         ser.write(command_option_2.encode())
 
-    def open_input_dialog_event(self):
+    def manualInputCommand(self):
         dialog = customtkinter.CTkInputDialog(text="Type in a command or select from the list:", title="CTkInputDialog")
         print("Command Entered:",dialog.get_input())
         #ser.write(dialog.get_input.encode())
@@ -215,7 +218,7 @@ class App(customtkinter.CTk):
     def send_command_event(self):
         print("Command Sent")
 
-    def about_device_simulator(self):
+    def aboutDeviceSimulator(self):
         dialog = customtkinter.CTkInputDialog(text="Test", title="About Device Simulator")
 
     def open_file_event(self):
@@ -224,6 +227,9 @@ class App(customtkinter.CTk):
 
     def onExit(self):
         self.quit()
+
+    def clearTextBox(self):
+        self.textbox1.delete('1.0', END)
 
     def handleIncomingText(self, reading):
         self.textbox1.insert(reading)
