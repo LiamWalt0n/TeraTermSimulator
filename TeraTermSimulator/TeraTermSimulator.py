@@ -114,15 +114,14 @@ class App(customtkinter.CTk):
         self.main_button_1 = customtkinter.CTkButton(master=self, text="Exit", command = self.open_file_event, border_width=2, text_color=("gray10", "#DCE4EE"))
         self.main_button_1.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
 
-        # create textbox
-       # self.textbox = customtkinter.CTkTextbox(self, width=250)
+       # create textbox
         self.textbox1 = customtkinter.CTkTextbox(self, width=250)
         self.textbox1.grid(row=0, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
-        self.textbox1.insert('0.1', handle_data)
+        
 
         # create tabview
         self.tabview = customtkinter.CTkTabview(self, width=250)
-        self.tabview.grid(row=0, column=2, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.tabview.grid(row=0, column=3, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.tabview.add("Command Options")
         self.tabview.add("Trigger Fire")
         self.tabview.tab("Command Options").grid_columnconfigure(0, weight=1)  # configure grid of individual tabs
@@ -144,14 +143,23 @@ class App(customtkinter.CTk):
                                                            command=self.open_input_dialog_event)
         self.string_input_button.grid(row=2, column=0, padx=20, pady=(10, 10))
         self.send_command_button = customtkinter.CTkButton(self.tabview.tab("Command Options"), text="Send Command",
-                                                           command=self.comboBoxsend)
+                                                           command=self.comboBoxsend1)
         self.send_command_button.grid(row=3, column=0, padx=20, pady=(10, 10))
-       # self.label_tab_2 = customtkinter.CTkLabel(self.tabview.tab("Tab 2"), text="CTkLabel on Tab 2")
-        #self.label_tab_2.grid(row=0, column=0, padx=20, pady=20)
+     
+        # Trigger Fire Tab Options
+        self.combobox_fire = customtkinter.CTkComboBox(self.tabview.tab("Trigger Fire"),
+                                                    values=["help\n\r"])
+        self.combobox_fire.grid(row=1, column=0, padx=20, pady=(10, 10))
+        self.send_command_button1 = customtkinter.CTkButton(self.tabview.tab("Trigger Fire"), text="Send Command",
+                                                           command=self.comboBoxsend2)
+        self.send_command_button1.grid(row=3, column=0, padx=20, pady=(10, 10))
+
+
+
 
         # create radiobutton frame
         self.radiobutton_frame = customtkinter.CTkFrame(self)
-        self.radiobutton_frame.grid(row=0, column=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
+        self.radiobutton_frame.grid(row=1, column=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
         self.radio_var = tkinter.IntVar(value=0)
         self.label_radio_group = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Serial Comms Connection")
         self.label_radio_group.grid(row=0, column=2, columnspan=1, padx=10, pady=10, sticky="")
@@ -165,33 +173,11 @@ class App(customtkinter.CTk):
                                                     values=["Eight Bits"])
         self.combobox_4.grid(row=3, column=2, pady=10, padx=20, sticky="n")
        
-       
-
-        # create checkbox and switch frame
-        self.checkbox_slider_frame = customtkinter.CTkFrame(self)
-        self.checkbox_slider_frame.grid(row=1, column=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
-        self.checkbox_1 = customtkinter.CTkLabel(master=self.checkbox_slider_frame, text="Zone Panel Info")
-        self.checkbox_1.grid(row=1, column=0, pady=(20, 10), padx=20, sticky="n")
-        self.checkbox_2 = customtkinter.CTkLabel(master=self.checkbox_slider_frame)
-        self.checkbox_2.grid(row=2, column=0, pady=10, padx=20, sticky="n")
-        self.switch_1 = customtkinter.CTkSwitch(master=self.checkbox_slider_frame, command=lambda: print("switch 1 toggle"))
-        self.switch_1.grid(row=3, column=0, pady=10, padx=20, sticky="n")
-        self.switch_2 = customtkinter.CTkSwitch(master=self.checkbox_slider_frame)
-        self.switch_2.grid(row=4, column=0, pady=(10, 20), padx=20, sticky="n")
-
-   
-
-        # set default values
-        #self.sidebar_button_3.configure(state="disabled", text="Disabled CTkButton")
-        self.checkbox_2.configure(state="disabled")
-        self.switch_2.configure(state="disabled")
-        #self.checkbox_1.select()
-        self.switch_1.select()
         
         self.appearance_mode_optionemenu.set("Dark")
         self.scaling_optionemenu.set("100%")
-        #self.optionmenu_1.set("CTkOptionmenu")
         self.combobox_1.set("Command List")
+        self.combobox_fire.set("Trigger Fire")
 
         thread = threading.Thread(target=read_from_port, args=(ser,self))
         thread.start()
@@ -200,15 +186,18 @@ class App(customtkinter.CTk):
 
     # COMMANDS FOR FUNCTIONS
 
-    def comboBoxsend(self):
+    def comboBoxsend1(self):
        command_option = self.combobox_1.get()
        ser.write(command_option.encode())
-       
 
+    def comboBoxsend2(self):
+        command_option_2 = self.combobox_fire.get()
+        ser.write(command_option_2.encode())
 
     def open_input_dialog_event(self):
         dialog = customtkinter.CTkInputDialog(text="Type in a command or select from the list:", title="CTkInputDialog")
-        print("Command Entered:", dialog.get_input())
+        print("Command Entered:",dialog.get_input())
+        #ser.write(dialog.get_input.encode())
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
@@ -218,13 +207,9 @@ class App(customtkinter.CTk):
         customtkinter.set_widget_scaling(new_scaling_float)
 
     def startSerCommsEvent(self):
-       # ser.write("\n\r".encode())
-       # ser.write("Play 1 0\n\r".encode())
         print("Start Selected")
 
     def stopSerCommsEvent(self):
-      #  ser.write("Play stop\n\r".encode())
-       # print(ser.write)
         print("Stop Selected")
      
     def send_command_event(self):
@@ -257,19 +242,9 @@ class App(customtkinter.CTk):
            anApp.handleIncomingText(reading)
            handle_data(reading)
            
-
-          
-
-
-       
- 
-
-    
         
 
 
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-    
-
