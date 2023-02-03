@@ -7,6 +7,7 @@ import tkinter
 from tkinter import Menu, Tk, ttk
 from tkinter import filedialog
 from tkinter import *
+from tkinter import simpledialog
 import tkinter.messagebox
 import customtkinter
 import serial
@@ -49,7 +50,7 @@ def read_from_port(ser, anApp):
          
 
 
-customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
+customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("green")  # Themes: "blue" (standard), "green", "dark-blue"
 
 
@@ -139,18 +140,18 @@ class App(customtkinter.CTk):
                                                             "device <n>              : Change a device", "breaker <o/c> <n> <dev> : Open/Close Breaker n at device.", "lose <n>                : Lose a device."
                                                             "restore <n>             : Restore a device.", "exec <file>             : Execute commands from file", "load backup <file>      : Load devices backup file (bin)"
                                                             "save backup <file>      : Save devices backup file (bin)", "save config <file/->    : Save devices config file/output (text)",
-                                                            "debug n/save            : Set debug level to n or save current to flash", "time [hh:mm:ss dd/mm/yy]: Set the time", "Play 1 0\n\r", "help\n\r"])
+                                                            "debug n/save            : Set debug level to n or save current to flash", "time [hh:mm:ss dd/mm/yy]: Set the time"])
         self.combobox_1.grid(row=1, column=0, padx=20, pady=(10, 10))
         self.string_input_button = customtkinter.CTkButton(self.evenOptions.tab("Command Options"), text="Enter Command Manually",
                                                            command=self.manualInputCommand)
         self.string_input_button.grid(row=2, column=0, padx=20, pady=(10, 10))
         self.send_command_button = customtkinter.CTkButton(self.evenOptions.tab("Command Options"), text="Send Command",
-                                                           command=self.comboBoxsend1)
+                                                           command=self.comboBoxsendVariables)
         self.send_command_button.grid(row=3, column=0, padx=20, pady=(10, 10))
      
         # Trigger Fire Tab Options
         self.combobox_fire = customtkinter.CTkComboBox(self.evenOptions.tab("Trigger Fire"),
-                                                    values=["help\n\r"])
+                                                    values=["help\n\r","Play 1 0\n\r"])
         self.combobox_fire.grid(row=1, column=0, padx=20, pady=(10, 10))
         self.send_command_button1 = customtkinter.CTkButton(self.evenOptions.tab("Trigger Fire"), text="Send Command",
                                                            command=self.comboBoxsend2)
@@ -163,22 +164,22 @@ class App(customtkinter.CTk):
         self.uiOptions_frame = customtkinter.CTkFrame(self, width=250)
         self.uiOptions_frame.grid(row=1, column=3, padx=(20, 0), pady=(20, 0))
 
-        self.appearance_mode_label = customtkinter.CTkLabel(self.uiOptions_frame, text="Appearance Mode:", anchor="w")
-        self.appearance_mode_label.grid(row=0, column=2, padx=20, pady=(10, 0))
-        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.uiOptions_frame, values=["Light", "Dark"],
-                                                                       command=self.change_appearance_mode_event)
-        self.appearance_mode_optionemenu.grid(row=1, column=2, padx=20, pady=(10, 10))
-        self.scaling_label = customtkinter.CTkLabel(self.uiOptions_frame, text="UI Scaling:", anchor="w")
-        self.scaling_label.grid(row=2, column=2, padx=20, pady=(10, 10))
-        self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.uiOptions_frame, values=["80%", "90%", "100%", "110%", "120%"],
-                                                               command=self.change_scaling_event)
-        self.scaling_optionemenu.grid(row=3, column=2, padx=20, pady=(10, 10))
+        #self.appearance_mode_label = customtkinter.CTkLabel(self.uiOptions_frame, text="Appearance Mode:", anchor="w")
+        #self.appearance_mode_label.grid(row=0, column=2, padx=20, pady=(10, 0))
+        #self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.uiOptions_frame, values=["Light", "Dark"],
+        #                                                               command=self.change_appearance_mode_event)
+        #self.appearance_mode_optionemenu.grid(row=1, column=2, padx=20, pady=(10, 10))
+        #self.scaling_label = customtkinter.CTkLabel(self.uiOptions_frame, text="UI Scaling:", anchor="w")
+        #self.scaling_label.grid(row=2, column=2, padx=20, pady=(10, 10))
+        #self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.uiOptions_frame, values=["80%", "90%", "100%", "110%", "120%"],
+        #                                                       command=self.change_scaling_event)
+        #self.scaling_optionemenu.grid(row=3, column=2, padx=20, pady=(10, 10))
 
 
         # These set the default displayed value in the corresponding widgets
         
-        self.appearance_mode_optionemenu.set("Dark")
-        self.scaling_optionemenu.set("100%")
+        #self.appearance_mode_optionemenu.set("Light")
+        #self.scaling_optionemenu.set("100%")
         self.combobox_1.set("Command List")
         self.combobox_fire.set("Trigger Fire")
 
@@ -189,9 +190,18 @@ class App(customtkinter.CTk):
 
     # COMMANDS FOR FUNCTIONS
 
+
+    # This function prints directly without being prompted for user input
     def comboBoxsend1(self):
        command_option = self.combobox_1.get()
        ser.write(command_option.encode())
+
+    def comboBoxsendVariables(self):
+        result = simpledialog.askstring("Input", self.combobox_1.get())
+        result = result + "\r\n"
+        ser.write(result.encode())
+        print("Result:", result)
+
 
     def comboBoxsend2(self):
         command_option_2 = self.combobox_fire.get()
@@ -219,7 +229,7 @@ class App(customtkinter.CTk):
         print("Command Sent")
 
     def aboutDeviceSimulator(self):
-        dialog = customtkinter.CTkInputDialog(text="Test", title="About Device Simulator")
+        dialog = tkinter.messagebox.showinfo(title="Loop Device Simulator", message="This is a loop device simulator that can be used to trigger events")
 
     def open_file_event(self):
         # return filedialog.askopenfilename() // This is to open a file
