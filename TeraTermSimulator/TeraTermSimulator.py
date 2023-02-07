@@ -11,56 +11,43 @@ from tkinter import simpledialog
 import tkinter.messagebox
 import customtkinter
 import serial
+import serial.tools.list_ports
 
 
-try:
-  ser = serial.Serial(
-    port='COM9',
+
+def select_port():
+  ports = [comport.device for comport in serial.tools.list_ports.comports()]
+  return ports[0] # select the first available port, or let the user select a port from the list
+
+port = select_port()
+ser = serial.Serial(
+    port=port,
     baudrate=115200,
     bytesize=serial.EIGHTBITS,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE
-  )
-  ser.isOpen() # try to open port, if possible print message and proceed with 'while True:'
+)
+ser.isOpen() # try to open port, if possible print message and proceed with 'while True:'
 
-  print ("port is opened!")
-
-except IOError: # if port is already opened, close it and open it again and print message
-  ser.close()
-  ser.open()
-  print ("port was already open, was closed and opened again!")
-
-##while True: # do something...
-
+print(f"port {port} is opened!")
 
 def handle_data(data):
     print(data)
-    
-    
 
 def read_from_port(ser, anApp):
-
-        while True:
-          # print("test")
-          # print(textbox1.insert)
-           reading = ser.readline().decode()
-           handle_data(reading)
-           anApp.textbox1.insert(0.1, reading)
-
-         
+    while True:
+        reading = ser.readline().decode()
+        handle_data(reading)
+        anApp.textbox1.insert(0.1, reading)
 
 
 customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("green")  # Themes: "blue" (standard), "green", "dark-blue"
 
-
-
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
 
-
-        
         # configure window
         self.title("Simulator")
         self.geometry(f"{1100}x{580}")
@@ -92,23 +79,23 @@ class App(customtkinter.CTk):
         self.serialCommsFrame.grid_rowconfigure(4, weight=1)
         self.startComsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Start Comms Connection", font=customtkinter.CTkFont(size=20, weight="bold"))
         self.startComsLabel.grid(row=0, column=0, padx=20, pady=(20, 10))
-        self.sidebar_button_1 = customtkinter.CTkButton(self.serialCommsFrame, text="Start", command=self.startSerCommsEvent)
+        self.sidebar_button_1 = customtkinter.CTkButton(self.serialCommsFrame, text="Start")
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
         self.sidebar_button_2 = customtkinter.CTkButton(self.serialCommsFrame, text="Stop", command=self.stopSerCommsEvent)
         self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
+
+        ports = [comport.device for comport in serial.tools.list_ports.comports()]
 
         
         self.label_radio_group = customtkinter.CTkLabel(self.serialCommsFrame, text="Serial Comms Connection")
         self.label_radio_group.grid(row=5, column=0, columnspan=1, padx=10, pady=10, sticky="")
         self.comportCombo = customtkinter.CTkComboBox(self.serialCommsFrame, 
-                                                    values=["COM 8", "COM 9"])
+                                                    values=ports)
         self.comportCombo.grid(row=6, column=0, pady=10, padx=20, sticky="n")
         self.baudrateCombo = customtkinter.CTkComboBox(self.serialCommsFrame,
-                                                    values=["115200", "9900"])
+                                                    values=["115200"])
         self.baudrateCombo.grid(row=7, column=0, pady=10, padx=20, sticky="n")
-        self.bytessCombo = customtkinter.CTkComboBox(self.serialCommsFrame,
-                                                    values=["Eight Bits"])
-        self.bytessCombo.grid(row=8, column=0, pady=10, padx=20, sticky="n")
+        
 
        # TREE VIEW ADDED HERE
         self.treeview = ttk.Treeview(self, height=6, show="tree")
@@ -219,8 +206,8 @@ class App(customtkinter.CTk):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         customtkinter.set_widget_scaling(new_scaling_float)
 
-    def startSerCommsEvent(self):
-        print("Start Selected")
+    #def startSerCommsEvent(self):
+        
 
     def stopSerCommsEvent(self):
         print("Stop Selected")
