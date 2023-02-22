@@ -1,5 +1,3 @@
-#from curses.textpad import Textbox
-#from curses.textpad import Textbox
 from logging import root
 import threading
 import time
@@ -8,6 +6,7 @@ from tkinter import Menu, Tk, ttk
 from tkinter import filedialog
 from tkinter import *
 from tkinter import simpledialog
+from tkinter import messagebox
 import tkinter.messagebox
 import customtkinter
 import serial
@@ -31,14 +30,22 @@ ser.isOpen() # try to open port, if possible print message and proceed with 'whi
 
 print(f"port {port} is opened!")
 
+serial_is_open = True
+
 def handle_data(data):
     print(data)
-
 def read_from_port(ser, anApp):
-    while True:
-        reading = ser.readline().decode()
-        handle_data(reading)
-        anApp.textbox1.insert(0.1, reading)
+    while serial_is_open:
+        if ser.is_open:
+            try:
+                reading = ser.readline().decode()
+                handle_data(reading)
+                anApp.serialReceiveTextBox.insert(0.1, reading)
+            except:
+                pass
+        else:
+            pass
+
 
 
 customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark", "Light"
@@ -65,7 +72,7 @@ class App(customtkinter.CTk):
         item.add_command(label='Clear', command=self.clearTextBox)
         item.add_command(label='Build')
         option.add_command(label='Import')
-        option.add_command(label='Exit', command=self.onExit())
+        option.add_command(label='Exit', command=self.onExit)
         menu.add_cascade(label='File', menu=item)
         menu.add_cascade(label='Options', menu=option)
         menu.add_cascade(label='About', menu=about)
@@ -79,16 +86,16 @@ class App(customtkinter.CTk):
         self.serialCommsFrame.grid_rowconfigure(4, weight=1)
         self.startComsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Start Comms Connection", font=customtkinter.CTkFont(size=20, weight="bold"))
         self.startComsLabel.grid(row=0, column=0, padx=20, pady=(20, 10))
-        self.sidebar_button_1 = customtkinter.CTkButton(self.serialCommsFrame, text="Start")
-        self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
-        self.sidebar_button_2 = customtkinter.CTkButton(self.serialCommsFrame, text="Stop", command=self.stopSerCommsEvent)
-        self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
+        self.startButton = customtkinter.CTkButton(self.serialCommsFrame, text="Start", command=self.startSerCommsEvent)
+        self.startButton.grid(row=1, column=0, padx=20, pady=10)
+        self.stopButton = customtkinter.CTkButton(self.serialCommsFrame, text="Stop", command=self.stopSerCommsEvent)
+        self.stopButton.grid(row=2, column=0, padx=20, pady=10)
 
         ports = [comport.device for comport in serial.tools.list_ports.comports()]
 
         
-        self.label_radio_group = customtkinter.CTkLabel(self.serialCommsFrame, text="Serial Comms Connection")
-        self.label_radio_group.grid(row=5, column=0, columnspan=1, padx=10, pady=10, sticky="")
+        self.serialCommsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Serial Comms Connection")
+        self.serialCommsLabel.grid(row=5, column=0, columnspan=1, padx=10, pady=10, sticky="")
         self.comportCombo = customtkinter.CTkComboBox(self.serialCommsFrame, 
                                                     values=ports)
         self.comportCombo.grid(row=6, column=0, pady=10, padx=20, sticky="n")
@@ -98,15 +105,16 @@ class App(customtkinter.CTk):
         
 
        # TREE VIEW ADDED HERE
-        self.treeview = ttk.Treeview(self, height=6, show="tree")
+        self.treeview = ttk.Treeview(self, height=6)
         self.treeview.grid(row=1, column=1, columnspan=2, padx=(20, 0), pady=(50, 50), sticky="nsew")
 
-        self.main_button_1 = customtkinter.CTkButton(master=self, text="Exit", command = self.open_file_event, border_width=2, text_color=("gray10", "#DCE4EE"))
-        self.main_button_1.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
+
+        self.exitButton = customtkinter.CTkButton(master=self, text="Exit", command = self.open_file_event, border_width=2, text_color=("gray10", "#DCE4EE"))
+        self.exitButton.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
 
        # create textbox
-        self.textbox1 = customtkinter.CTkTextbox(self, width=250)
-        self.textbox1.grid(row=0, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
+        self.serialReceiveTextBox = customtkinter.CTkTextbox(self, width=250)
+        self.serialReceiveTextBox.grid(row=0, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
         
 
         # create tabview
@@ -135,14 +143,30 @@ class App(customtkinter.CTk):
         self.send_command_button = customtkinter.CTkButton(self.evenOptions.tab("Command Options"), text="Send Command",
                                                            command=self.comboBoxsendVariables)
         self.send_command_button.grid(row=3, column=0, padx=20, pady=(10, 10))
+        self.clearTextBox = customtkinter.CTkButton(self.evenOptions.tab("Command Options"), text="Clear",
+                                                           command=self.clearTextBox)
+        self.clearTextBox.grid(row=4, column=0, padx=20, pady=(10, 10))
      
-        # Trigger Fire Tab Options
+      # Trigger Fire Tab Options
+        self.evenOptions.tab("Trigger Fire").grid_columnconfigure(0, weight=1)
+        self.evenOptions.tab("Trigger Fire").grid_rowconfigure(0, weight=0)
+        self.evenOptions.tab("Trigger Fire").grid_rowconfigure(1, weight=0)
+        self.evenOptions.tab("Trigger Fire").grid_rowconfigure(2, weight=0)
+        self.evenOptions.tab("Trigger Fire").grid_rowconfigure(3, weight=0)
+    
+
         self.combobox_fire = customtkinter.CTkComboBox(self.evenOptions.tab("Trigger Fire"),
-                                                    values=["help\n\r","Play 1 0\n\r"])
-        self.combobox_fire.grid(row=1, column=0, padx=20, pady=(10, 10))
+                                            values=["help\n\r","Play 1 0\n\r"])
+        self.combobox_fire.grid(row=1, column=0, padx=20, pady=(10, 10), sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W)
+
         self.send_command_button1 = customtkinter.CTkButton(self.evenOptions.tab("Trigger Fire"), text="Send Command",
-                                                           command=self.comboBoxsend2)
-        self.send_command_button1.grid(row=3, column=0, padx=20, pady=(10, 10))
+                                                   command=self.comboBoxsend2, width=20)
+        self.send_command_button1.grid(row=2, column=0, padx=20, pady=(10, 20), sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W)
+        
+
+
+
+
 
 
 
@@ -150,23 +174,6 @@ class App(customtkinter.CTk):
         # create uiOptions frame
         self.uiOptions_frame = customtkinter.CTkFrame(self, width=250)
         self.uiOptions_frame.grid(row=1, column=3, padx=(20, 0), pady=(20, 0))
-
-        #self.appearance_mode_label = customtkinter.CTkLabel(self.uiOptions_frame, text="Appearance Mode:", anchor="w")
-        #self.appearance_mode_label.grid(row=0, column=2, padx=20, pady=(10, 0))
-        #self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.uiOptions_frame, values=["Light", "Dark"],
-        #                                                               command=self.change_appearance_mode_event)
-        #self.appearance_mode_optionemenu.grid(row=1, column=2, padx=20, pady=(10, 10))
-        #self.scaling_label = customtkinter.CTkLabel(self.uiOptions_frame, text="UI Scaling:", anchor="w")
-        #self.scaling_label.grid(row=2, column=2, padx=20, pady=(10, 10))
-        #self.scaling_optionemenu = customtkinter.CTkOptionMenu(self.uiOptions_frame, values=["80%", "90%", "100%", "110%", "120%"],
-        #                                                       command=self.change_scaling_event)
-        #self.scaling_optionemenu.grid(row=3, column=2, padx=20, pady=(10, 10))
-
-
-        # These set the default displayed value in the corresponding widgets
-        
-        #self.appearance_mode_optionemenu.set("Light")
-        #self.scaling_optionemenu.set("100%")
         self.combobox_1.set("Command List")
         self.combobox_fire.set("Trigger Fire")
 
@@ -175,8 +182,7 @@ class App(customtkinter.CTk):
 
 
 
-    # COMMANDS FOR FUNCTIONS
-
+    ## COMMANDS FOR FUNCTIONS
 
     # This function prints directly without being prompted for user input
     def comboBoxsend1(self):
@@ -185,14 +191,30 @@ class App(customtkinter.CTk):
 
     def comboBoxsendVariables(self):
         result = simpledialog.askstring("Input", self.combobox_1.get())
-        result = result + "\r\n"
-        ser.write(result.encode())
-        print("Result:", result)
+        if result is not None:
+            result = result + "\r\n"
+            ser.write(result.encode())
+            print("Result:", result)
+        else:
+            print("Dialog was cancelled.")
+
 
 
     def comboBoxsend2(self):
         command_option_2 = self.combobox_fire.get()
+    
+        if command_option_2 == "Stop":
+        # Close the serial port
+            ser.close()
+        else:
+        # Open the serial port if it's not already open
+            if not ser.is_open:
+                ser.open()
+            
+        # Write to the serial port
         ser.write(command_option_2.encode())
+
+
 
     def manualInputCommand(self):
         dialog = customtkinter.CTkInputDialog(text="Type in a command or select from the list:", title="CTkInputDialog")
@@ -207,10 +229,46 @@ class App(customtkinter.CTk):
         customtkinter.set_widget_scaling(new_scaling_float)
 
     #def startSerCommsEvent(self):
-        
+       
 
     def stopSerCommsEvent(self):
-        print("Stop Selected")
+        global serial_is_open
+        if serial_is_open:
+            ser.close()
+            serial_is_open = False
+            print("Serial communication stopped.")
+        else:
+            print("Serial port is already closed.")
+
+    def startSerCommsEvent(self):
+        global serial_is_open, ser, thread
+    
+        if not serial_is_open:
+            try:
+                port = select_port()
+                ser = serial.Serial(
+                port=port,
+                baudrate=115200,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE
+                )
+                ser.isOpen() # try to open port, if possible print message and proceed with 'while True:'
+                print(f"Port {port} is opened!")
+            
+                serial_is_open = True
+            
+                thread = threading.Thread(target=read_from_port, args=(ser,self))
+                thread.start()
+            
+                print("Serial communication started.")
+            except serial.SerialException:
+                print("Failed to open serial port.")
+        else:
+            print("Serial port is already open.")
+
+
+
      
     def send_command_event(self):
         print("Command Sent")
@@ -222,14 +280,40 @@ class App(customtkinter.CTk):
         # return filedialog.askopenfilename() // This is to open a file
         self.destroy()
 
+    from tkinter import messagebox
+
+    from tkinter import messagebox
+
     def onExit(self):
-        self.quit()
+        global serial_is_open, running
+        if running:
+            response = messagebox.askyesno("Confirmation", "The application is currently running. Are you sure you want to exit without stopping it?")
+        if not response:
+            return
+        if serial_is_open:
+            ser.close()
+            serial_is_open = False
+            print("Serial communication stopped.")
+        else:
+            print("Serial port is already closed.")
+        self.destroy()
+
+
+
+
+    def retrieveDevices(self):
+          while True:
+            data = ser.readline().decode().strip()
+            if data:
+                devices = data.split(',')
+            for device in devices:
+                self.treeview.insert('', 'end', text=device)
 
     def clearTextBox(self):
-        self.textbox1.delete('1.0', END)
+        self.serialReceiveTextBox.delete('1.0', END)
 
     def handleIncomingText(self, reading):
-        self.textbox1.insert(reading)
+        self.serialReceiveTextBox.insert(reading)
 
     def handle_data(data):
         print(data)
@@ -240,7 +324,7 @@ class App(customtkinter.CTk):
 
         while True:
           # print("test")
-          # print(textbox1.insert)
+          # print(serialReceiveTextBox.insert)
            reading = ser.readline().decode()
            anApp.handleIncomingText(reading)
            handle_data(reading)
