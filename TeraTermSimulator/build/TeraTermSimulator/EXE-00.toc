@@ -55,6 +55,9 @@
   ('pyi_rth_multiprocessing',
    'C:\\Users\\H516862\\AppData\\Local\\Programs\\Python\\Python310\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_multiprocessing.py',
    'PYSOURCE'),
+  ('pyi_rth_setuptools',
+   'C:\\Users\\H516862\\AppData\\Local\\Programs\\Python\\Python310\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
+   'PYSOURCE'),
   ('pyi_rth__tkinter',
    'C:\\Users\\H516862\\AppData\\Local\\Programs\\Python\\Python310\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth__tkinter.py',
    'PYSOURCE'),
@@ -65,7 +68,7 @@
  [],
  False,
  False,
- 1677073534,
+ 1677148693,
  [('run.exe',
    'C:\\Users\\H516862\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
    'EXECUTABLE')])
