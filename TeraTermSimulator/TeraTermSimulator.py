@@ -15,20 +15,35 @@ import serial.tools.list_ports
 
 
 def select_port():
-  ports = [comport.device for comport in serial.tools.list_ports.comports()]
-  return ports[0] # select the first available port, or let the user select a port from the list
+    ports = [comport.device for comport in serial.tools.list_ports.comports()]
+    for port in ports:
+        try:
+            ser = serial.Serial(
+                port=port,
+                baudrate=115200,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE
+            )
+            ser.close()
+            return port
+        except serial.SerialException:
+            pass
+    return None
 
 port = select_port()
-ser = serial.Serial(
-    port=port,
-    baudrate=115200,
-    bytesize=serial.EIGHTBITS,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_ONE
-)
-ser.isOpen() # try to open port, if possible print message and proceed with 'while True:'
 
-print(f"port {port} is opened!")
+if port is not None:
+    ser = serial.Serial(
+        port=port,
+        baudrate=115200,
+        bytesize=serial.EIGHTBITS,
+        parity=serial.PARITY_NONE,
+        stopbits=serial.STOPBITS_ONE
+    )
+    print(f"Port {port} is opened!")
+else:
+    print("No available ports found!")
 
 serial_is_open = True
 
@@ -86,7 +101,7 @@ class App(customtkinter.CTk):
         self.serialCommsFrame.grid_rowconfigure(4, weight=1)
         self.startComsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Start Comms Connection", font=customtkinter.CTkFont(size=20, weight="bold"))
         self.startComsLabel.grid(row=0, column=0, padx=20, pady=(20, 10))
-        self.startButton = customtkinter.CTkButton(self.serialCommsFrame, text="Start", command=self.startSerCommsEvent)
+        self.startButton = customtkinter.CTkButton(self.serialCommsFrame, text="Start", command=self.startSerCommsEvent, state="disabled")
         self.startButton.grid(row=1, column=0, padx=20, pady=10)
         self.stopButton = customtkinter.CTkButton(self.serialCommsFrame, text="Stop", command=self.stopSerCommsEvent)
         self.stopButton.grid(row=2, column=0, padx=20, pady=10)
@@ -162,24 +177,15 @@ class App(customtkinter.CTk):
         self.send_command_button1 = customtkinter.CTkButton(self.evenOptions.tab("Trigger Fire"), text="Send Command",
                                                    command=self.comboBoxsend2, width=20)
         self.send_command_button1.grid(row=2, column=0, padx=20, pady=(10, 20), sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W)
-        
-
-
-
-
-
-
-
 
         # create uiOptions frame
         self.uiOptions_frame = customtkinter.CTkFrame(self, width=250)
         self.uiOptions_frame.grid(row=1, column=3, padx=(20, 0), pady=(20, 0))
         self.combobox_1.set("Command List")
-        self.combobox_fire.set("Trigger Fire")
+        self.combobox_fire.set("help")
 
         thread = threading.Thread(target=read_from_port, args=(ser,self))
         thread.start()
-
 
 
     ## COMMANDS FOR FUNCTIONS
@@ -237,6 +243,10 @@ class App(customtkinter.CTk):
             ser.close()
             serial_is_open = False
             print("Serial communication stopped.")
+            # Deactivate the Stop button and activate the Start button and Exit button
+            self.startButton.configure(state="normal")
+            self.stopButton.configure(state="disabled")
+            self.exitButton.configure(state="normal")
         else:
             print("Serial port is already closed.")
 
@@ -262,10 +272,15 @@ class App(customtkinter.CTk):
                 thread.start()
             
                 print("Serial communication started.")
+                 # Deactivate the Start button and activate the Stop button and Exit button
+                self.startButton.configure(state="disabled")
+                self.stopButton.configure(state="normal")
+                self.exitButton.configure(state="disabled")
             except serial.SerialException:
                 print("Failed to open serial port.")
         else:
             print("Serial port is already open.")
+
 
 
 
@@ -311,6 +326,14 @@ class App(customtkinter.CTk):
 
     def clearTextBox(self):
         self.serialReceiveTextBox.delete('1.0', END)
+
+    def update_clear_button(self):
+        if self.serialReceiveTextBox.get('1.0', 'end-1c') == '':
+            self.clearTextBox.config(state="disabled")
+        else:
+            self.clearTextBox.config(state="normal")
+
+    
 
     def handleIncomingText(self, reading):
         self.serialReceiveTextBox.insert(reading)
