@@ -5,6 +5,8 @@ class SerialConnection:
 
     serial_is_open = True
     serialDataReceived = ""
+    commandDataReceived = ""
+    commandInProgress = False
     ports = [comport.device for comport in serial.tools.list_ports.comports()]
 
     def __init__(self):
@@ -53,13 +55,15 @@ class SerialConnection:
             return self.ser.readline().decode().strip()
         return None
 
-    #def read_from_port(self):
-    #    while self.serial_is_open:
-    #        if self.ser.is_open:
-    #            try:
-    #                reading = self.ser.readline().decode()
-    #                self.serialDataReceived = self.serialDataReceived + reading                    
-    #            except:
-    #                pass
-    #        else:
-    #            pass
+    def read_from_port(self):
+        while self.serial_is_open:
+            if self.ser.is_open:
+                try:
+                    reading = self.ser.readline().decode()
+                    self.serialDataReceived = self.serialDataReceived + reading 
+                    if self.commandInProgress == True:
+                        self.commandDataReceived = self.commandDataReceived + reading
+                except:
+                    pass
+            else:
+                pass

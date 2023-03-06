@@ -1,4 +1,4 @@
-
+import command_handler
 import tkinter
 from tkinter import Menu, Tk, ttk
 from tkinter import filedialog
@@ -7,6 +7,7 @@ from tkinter import simpledialog
 from tkinter import messagebox
 import tkinter.messagebox
 import customtkinter
+import threading
 
 customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("green")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -15,8 +16,8 @@ class App(customtkinter.CTk):
     def __init__(self, serial):
         super().__init__()
 
-        global stopit
-        stopit = serial
+        global mySerial
+        mySerial = serial
 
         # configure window
         self.title("Simulator")
@@ -74,7 +75,7 @@ class App(customtkinter.CTk):
         self.loadTreeBtn.grid(row=3, column=1, padx=40, pady=10)
 
 
-        self.exitButton = customtkinter.CTkButton(master=self, text="Exit", command = self.open_file_event, border_width=2, text_color=("gray10", "#DCE4EE"))
+        self.exitButton = customtkinter.CTkButton(master=self, text="Exit", command = self.onExit, border_width=2, text_color=("gray10", "#DCE4EE"))
         self.exitButton.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
 
        # create textbox
@@ -154,24 +155,27 @@ class App(customtkinter.CTk):
 
     def comboBoxsendVariables(self):
         global textDataReceived
-        global stopit
+        global mySerial
         result = simpledialog.askstring("Input", self.combobox_1.get())
         if result is not None:
             result = result + "\r\n"
-            stopit.write(result.encode())
+            mySerial.write(result.encode())
             print("Result:", result)
           
-            self.serialReceiveTextBox.insert(0.1, stopit.serialDataReceived.encode())
+            self.serialReceiveTextBox.insert(0.1, mySerial.serialDataReceived.encode())
 
         else:
             print("Dialog was cancelled.")
 
 
     def loadTree(self):
+            global mySerial
+            
         # Send "ds" command to the serial port
-            stopit.write("ds\n\r".encode())
-
-    #  
+            mySerial.commandInProgress = True
+            mySerial.write("ds\n\r".encode())
+            threadCommand = threading.Thread(target=command_handler.treeViewHandler, args=(self,mySerial))
+            threadCommand.start()
 
     
     def comboBoxsend2(self):
@@ -179,14 +183,14 @@ class App(customtkinter.CTk):
     
         if command_option_2 == "Stop":
         # Close the serial port
-            stopit.close()
+            mySerial.close()
         else:
         # Open the serial port if it's not already open
-            if not stopit.is_open:
-                stopit.open()
+            if not mySerial.is_open:
+                mySerial.open()
             
         # Write to the serial port
-        stopit.write(command_option_2.encode())
+        mySerial.write(command_option_2.encode())
 
 
 
@@ -207,9 +211,9 @@ class App(customtkinter.CTk):
 
     def stopSerCommsEvent(self):
         global serial_is_open
-        if serial_is_open:
-            ser.close()
-            serial_is_open = False
+        if mySerial.serial_is_open:
+            mySerial.serial.close()
+            mySerial.serial_is_open = False
             print("Serial communication stopped.")
             # Deactivate the Stop button and activate the Start button and Exit button
             self.startButton.configure(state="normal")
@@ -271,6 +275,7 @@ class App(customtkinter.CTk):
 
     def onExit(self):
         global serial_is_open, running
+        running = True
         if running:
             response = messagebox.askyesno("Confirmation", "The application is currently running. Are you sure you want to exit without stopping it?")
         if not response:
