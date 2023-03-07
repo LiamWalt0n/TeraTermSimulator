@@ -1,19 +1,22 @@
 import serial
 import serial.tools.list_ports
 
+
 class SerialConnection:
 
-    serial_is_open = True
+    serialPort = None
     serialDataReceived = ""
     commandDataReceived = ""
     commandInProgress = False
     ports = [comport.device for comport in serial.tools.list_ports.comports()]
 
     def __init__(self):
-        self.ser = None
+        heheh = 0
+
+    def openPort(self):
         self.port = self.select_port()
         if self.port is not None:
-            self.ser = serial.Serial(
+            self.serialPort = serial.Serial(
                 port=self.port,
                 baudrate=115200,
                 bytesize=serial.EIGHTBITS,
@@ -23,6 +26,13 @@ class SerialConnection:
             print(f"Port {self.port} is opened!")
         else:
             print("No available ports found!")
+
+    def closePort(self):
+        if self.serialPort.is_open:
+            self.serialPort.close()
+            print("Serial port has closed")
+        else:
+            print("Serial port is already closed.")
 
     def select_port(self):
         ports = [comport.device for comport in serial.tools.list_ports.comports()]
@@ -42,24 +52,24 @@ class SerialConnection:
         return None
 
     def is_open(self):
-        if self.ser is not None:
-            return self.ser.is_open
+        if self.serialPort is not None:
+            return self.serialPort.is_open
         return False
 
     def write(self, data):
-        if self.ser is not None and self.ser.is_open:
-            self.ser.write(data)
+        if self.serialPort is not None and self.serialPort.is_open:
+            self.serialPort.write(data)
 
     def read_line(self):
-        if self.ser is not None and self.ser.is_open:
-            return self.ser.readline().decode().strip()
+        if self.serialPort is not None and self.serialPort.is_open:
+            return self.serialPort.readline().decode().strip()
         return None
 
     def read_from_port(self):
-        while self.serial_is_open:
-            if self.ser.is_open:
+        while self.serialPort.is_open:
+            if self.is_open:
                 try:
-                    reading = self.ser.readline().decode()
+                    reading = self.serialPort.readline().decode()
                     self.serialDataReceived = self.serialDataReceived + reading 
                     if self.commandInProgress == True:
                         self.commandDataReceived = self.commandDataReceived + reading

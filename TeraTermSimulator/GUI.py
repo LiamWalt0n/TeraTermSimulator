@@ -8,6 +8,13 @@ from tkinter import messagebox
 import tkinter.messagebox
 import customtkinter
 import threading
+from serial import Serial, SerialException
+import serial
+import TeraTermSimulator
+import serial_connection
+from serial_connection import SerialConnection
+
+
 
 customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("green")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -15,9 +22,8 @@ customtkinter.set_default_color_theme("green")  # Themes: "blue" (standard), "gr
 class App(customtkinter.CTk):
     def __init__(self, serial):
         super().__init__()
-
-        global mySerial
-        mySerial = serial
+       
+        self.mySerial = serial
 
         # configure window
         self.title("Simulator")
@@ -155,11 +161,10 @@ class App(customtkinter.CTk):
 
     def comboBoxsendVariables(self):
         global textDataReceived
-        global mySerial
         result = simpledialog.askstring("Input", self.combobox_1.get())
         if result is not None:
             result = result + "\r\n"
-            mySerial.write(result.encode())
+            self.mySerial.write(result.encode())
             print("Result:", result)
           
             self.serialReceiveTextBox.insert(0.1, mySerial.serialDataReceived.encode())
@@ -168,13 +173,11 @@ class App(customtkinter.CTk):
             print("Dialog was cancelled.")
 
 
-    def loadTree(self):
-            global mySerial
-            
+    def loadTree(self):            
         # Send "ds" command to the serial port
-            mySerial.commandInProgress = True
-            mySerial.write("ds\n\r".encode())
-            threadCommand = threading.Thread(target=command_handler.treeViewHandler, args=(self,mySerial))
+            self.mySerial.commandInProgress = True
+            self.mySerial.write("ds\n\r".encode())
+            threadCommand = threading.Thread(target=command_handler.treeViewHandler, args=(self, self.mySerial))
             threadCommand.start()
 
     
@@ -183,14 +186,14 @@ class App(customtkinter.CTk):
     
         if command_option_2 == "Stop":
         # Close the serial port
-            mySerial.close()
+            self.mySerial.close()
         else:
         # Open the serial port if it's not already open
-            if not mySerial.is_open:
-                mySerial.open()
+            if not self.mySerial.is_open:
+                self.mySerial.open()
             
         # Write to the serial port
-        mySerial.write(command_option_2.encode())
+        self.mySerial.write(command_option_2.encode())
 
 
 
@@ -205,56 +208,29 @@ class App(customtkinter.CTk):
     def change_scaling_event(self, new_scaling: str):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         customtkinter.set_widget_scaling(new_scaling_float)
-
-    #def startSerCommsEvent(self):
        
-
     def stopSerCommsEvent(self):
-        global serial_is_open
-        if mySerial.serial_is_open:
-            mySerial.serial.close()
-            mySerial.serial_is_open = False
-            print("Serial communication stopped.")
-            # Deactivate the Stop button and activate the Start button and Exit button
-            self.startButton.configure(state="normal")
-            self.stopButton.configure(state="disabled")
-            self.exitButton.configure(state="normal")
-        else:
-            print("Serial port is already closed.")
+        # Deactivate the Stop button and activate the Start button and Exit button
+        self.mySerial.closePort()
+        self.startButton.configure(state="normal")
+        self.stopButton.configure(state="disabled")
+        self.exitButton.configure(state="normal")
 
     def startSerCommsEvent(self):
-        global serial_is_open, ser, thread
-    
-        if not serial_is_open:
-            try:
-                port = select_port()
-                ser = serial.Serial(
-                port=port,
-                baudrate=115200,
-                bytesize=serial.EIGHTBITS,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE
-                )
-                ser.isOpen() # try to open port, if possible print message and proceed with 'while True:'
-                print(f"Port {port} is opened!")
-            
-                serial_is_open = True
-            
-                thread = threading.Thread(target=read_from_port, args=(ser,self))
-                thread.start()
-            
-                print("Serial communication started.")
-                 # Deactivate the Start button and activate the Stop button and Exit button
-                self.startButton.configure(state="disabled")
-                self.stopButton.configure(state="normal")
-                self.exitButton.configure(state="disabled")
-            except serial.SerialException:
-                print("Failed to open serial port.")
-        else:
-            print("Serial port is already open.")
+        global serial_is_open, ser, thread              
+        self.mySerial.openPort()
+        TeraTermSimulator.startThreads(self.mySerial, self)
+        print("Serial communication started.")
+        # Deactivate the Start button and activate the Stop button and Exit button
+        self.startButton.configure(state="disabled")
+        self.stopButton.configure(state="normal")
+        self.exitButton.configure(state="disabled")
 
+            
 
-
+      
+            
+       
 
     def stopFire(self):
         ser.write("playstop".enocode())
