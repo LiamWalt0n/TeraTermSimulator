@@ -8,7 +8,7 @@ import serial.tools.list_ports
 
 def handleIncomingText(serial, myGUI):
     
-    while True:
+     while serial.serialPort.is_open:
         if serial.serialDataReceived != "":
             print(serial.serialDataReceived)
             #myGUI.serialReceiveTextBox + serial.serialDataReceived
@@ -16,18 +16,28 @@ def handleIncomingText(serial, myGUI):
             serial.serialDataReceived = ""            
         time.sleep(0.1)
 
-                    
-if __name__ == "__main__":
+def startThreads(serial, myGUI):
 
-    
-    serial = serial_connection.SerialConnection()
-    myGUI = GUI.App(serial)
 
     threadSerial = threading.Thread(target=serial.read_from_port, args=())
     threadSerial.start()
     
     threadHandle = threading.Thread(target=handleIncomingText, args=(serial, myGUI))
     threadHandle.start()
+
+                    
+if __name__ == "__main__":
+    
+
+    
+    serial = serial_connection.SerialConnection()
+    myGUI = GUI.App(serial)
+
+    #threadSerial = threading.Thread(target=serial.read_from_port, args=())
+    #threadSerial.start()
+    
+    #threadHandle = threading.Thread(target=handleIncomingText, args=(serial, myGUI))
+    #threadHandle.start()
 
     myGUI.mainloop()
    
