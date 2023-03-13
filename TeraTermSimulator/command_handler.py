@@ -29,6 +29,9 @@ def treeViewHandler(GUI, mySerial):
     mySerial.commandInProgress = False
     print(mySerial.commandDataReceived)
 
+    # Delete all items in the treeview
+    GUI.treeview.delete(*GUI.treeview.get_children())
+
     # Initialize a counter
     count = 1
 
@@ -44,16 +47,17 @@ def treeViewHandler(GUI, mySerial):
             # Create a new string by combining the first and fifth elements
             entry_text = entry_fields[0] + " " + entry_fields[4] + '\n'
             # Insert a new item in the tree view with the new string and increment the counter
-            parent_id = GUI.treeview.insert('','end', count, text=entry_text)
+            parent_id = GUI.treeview.insert('', 'end', count, text=entry_text)
             count += 1
             # Insert a new child item under the current item and increment the counter
-            child_id = GUI.treeview.insert(parent_id,'end', count, text="Test")
+            child_id = GUI.treeview.insert(parent_id, 'end', count, text="Test")
             count += 1
             # Print the fifth element
             print(entry_fields[4])
 
     # Wait for 2 seconds
     time.sleep(2)
+
 
 
 
