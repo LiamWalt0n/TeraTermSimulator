@@ -1,3 +1,4 @@
+from turtle import circle
 import command_handler
 import tkinter
 from tkinter import Menu, Tk, ttk
@@ -12,7 +13,26 @@ from serial import Serial, SerialException
 import serial
 import TeraTermSimulator
 import serial_connection
-from serial_connection import SerialConnection
+from customtkinter import CTkCanvas
+
+
+class LED(CTkCanvas):
+    def __init__(self, master, size=20, color="green", **kwargs):
+        super().__init__(master, width=size, height=size, **kwargs)
+        self.color = color
+        self.create_led()
+
+    def create_led(self):
+        radius = self.winfo_width() / 2
+        self.led = self.create_oval(0, 0, radius * 2, radius * 2, fill=self.color)
+        self.move(self.led, self.winfo_width()/2 - radius, self.winfo_height()/2 - radius)
+
+
+    def set_color(self, color):
+        self.color = color
+        self.itemconfigure(self.led, fill=color)
+
+
 
 
 
@@ -58,10 +78,13 @@ class App(customtkinter.CTk):
         self.startComsLabel.grid(row=0, column=0, padx=20, pady=(20, 10))
         self.startButton = customtkinter.CTkButton(self.serialCommsFrame, text="Start", command=self.startSerCommsEvent)
         self.startButton.grid(row=1, column=0, padx=20, pady=10)
-        self.stopButton = customtkinter.CTkButton(self.serialCommsFrame, text="Stop", command=self.stopSerCommsEvent)
+        self.stopButton = customtkinter.CTkButton(self.serialCommsFrame, text="Stop", command=self.stopSerCommsEvent, state="disabled")
         self.stopButton.grid(row=2, column=0, padx=20, pady=10)
+         # Create and display green LED
+        self.led = LED(self.serialCommsFrame, size=20, color="grey")
+        self.led.grid(row=3, column=0, padx=20, pady=10)
 
-                
+       
         self.serialCommsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Serial Comms Connection")
         self.serialCommsLabel.grid(row=5, column=0, columnspan=1, padx=10, pady=10, sticky="")
         self.comportCombo = customtkinter.CTkComboBox(self.serialCommsFrame, 
@@ -71,15 +94,12 @@ class App(customtkinter.CTk):
                                                     values=["115200"])
         self.baudrateCombo.grid(row=7, column=0, pady=10, padx=20, sticky="n")
         
-
        # TREE VIEW ADDED HERE
         self.treeview = ttk.Treeview(self, height=6)
-        
         self.treeview.grid(row=1, column=1, columnspan=2, padx=(20, 0), pady=(50, 50), sticky="nsew")
 
-        self.loadTreeBtn = customtkinter.CTkButton(self, text="Load Tree", width=30, height=30,command=self.loadTree)
+        self.loadTreeBtn = customtkinter.CTkButton(self, text="Load Tree", width=30, height=30, command=self.loadTree)
         self.loadTreeBtn.grid(row=3, column=1, padx=40, pady=10)
-
 
         self.exitButton = customtkinter.CTkButton(master=self, text="Exit", command = self.onExit, border_width=2, text_color=("gray10", "#DCE4EE"))
         self.exitButton.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
@@ -88,7 +108,6 @@ class App(customtkinter.CTk):
         self.serialReceiveTextBox = customtkinter.CTkTextbox(self, width=250)
         self.serialReceiveTextBox.grid(row=0, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
         
-
         # create tabview
         self.evenOptions = customtkinter.CTkTabview(self, width=250)
         self.evenOptions.grid(row=0, column=3, padx=(20, 0), pady=(20, 0), sticky="nsew")
@@ -119,7 +138,6 @@ class App(customtkinter.CTk):
                                                            command=self.clearTextBox)
         self.clearTextBox.grid(row=4, column=0, padx=20, pady=(10, 10))
 
-     
       # Trigger Fire Tab Options
         self.evenOptions.tab("Trigger Fire").grid_columnconfigure(0, weight=1)
         self.evenOptions.tab("Trigger Fire").grid_rowconfigure(0, weight=0)
@@ -137,7 +155,7 @@ class App(customtkinter.CTk):
         self.send_command_button1.grid(row=2, column=0, padx=20, pady=(10, 20), sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W)
         
         self.clearTextBox1 = customtkinter.CTkButton(self.evenOptions.tab("Trigger Fire"), text="Stop Fire",
-                                                           command=self.clearTextBox)
+                                                           command=self.stopFire)
         self.clearTextBox1.grid(row=4, column=0, padx=20, pady=(10, 10))
 
         # create uiOptions frame
@@ -145,9 +163,6 @@ class App(customtkinter.CTk):
         self.uiOptions_frame.grid(row=1, column=3, padx=(20, 0), pady=(20, 0))
         self.combobox_1.set("Command List")
         self.combobox_fire.set("Fire List")
-
-
-
 
     ## COMMANDS FOR FUNCTIONS
 
@@ -161,14 +176,13 @@ class App(customtkinter.CTk):
 
     def comboBoxsendVariables(self):
         global textDataReceived
-        result = simpledialog.askstring("Input", self.combobox_1.get())
+        dialog = customtkinter.CTkInputDialog(text=self.combobox_1.get(), title="Send Selected Command")
+        result = dialog.get_input()
         if result is not None:
             result = result + "\r\n"
             self.mySerial.write(result.encode())
             print("Result:", result)
-          
-            self.serialReceiveTextBox.insert(0.1, mySerial.serialDataReceived.encode())
-
+            self.serialReceiveTextBox.insert(0.1, self.mySerial.serialDataReceived.encode())
         else:
             print("Dialog was cancelled.")
 
@@ -179,7 +193,6 @@ class App(customtkinter.CTk):
             self.mySerial.write("ds\n\r".encode())
             threadCommand = threading.Thread(target=command_handler.treeViewHandler, args=(self, self.mySerial))
             threadCommand.start()
-
     
     def comboBoxsend2(self):
         command_option_2 = self.combobox_fire.get()
@@ -195,16 +208,22 @@ class App(customtkinter.CTk):
         # Write to the serial port
         self.mySerial.write(command_option_2.encode())
 
-
-
     def manualInputCommand(self):
         dialog = customtkinter.CTkInputDialog(text="Type in a command or select from the list:", title="CTkInputDialog")
-        print("Command Entered:",dialog.get_input())
-        #ser.write(dialog.get_input.encode())
+        input_str = dialog.get_input()
+        if input_str is not None:
+            input_str += "\r\n"
+            self.mySerial.write(input_str.encode())
+            self.serialReceiveTextBox.insert(0.1, self.mySerial.serialDataReceived)
+            print("Result:", input_str)
+        else:
+            print("Dialog was cancelled.")
+
+
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
-
+        
     def change_scaling_event(self, new_scaling: str):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         customtkinter.set_widget_scaling(new_scaling_float)
@@ -215,6 +234,7 @@ class App(customtkinter.CTk):
         self.startButton.configure(state="normal")
         self.stopButton.configure(state="disabled")
         self.exitButton.configure(state="normal")
+        self.led.configure(bg="red")
 
     def startSerCommsEvent(self):
         global serial_is_open, ser, thread              
@@ -225,15 +245,10 @@ class App(customtkinter.CTk):
         self.startButton.configure(state="disabled")
         self.stopButton.configure(state="normal")
         self.exitButton.configure(state="disabled")
-
-            
-
-      
-            
-       
+        self.led.configure(bg="green")
 
     def stopFire(self):
-        ser.write("playstop".enocode())
+        self.mySerial.write("play stop\r\n".encode())
      
     def send_command_event(self):
         print("Command Sent")
@@ -250,19 +265,12 @@ class App(customtkinter.CTk):
     from tkinter import messagebox
 
     def onExit(self):
-        global serial_is_open, running
+        global running
         running = True
         if running:
-            response = messagebox.askyesno("Confirmation", "The application is currently running. Are you sure you want to exit without stopping it?")
-        if not response:
-            return
-        if serial_is_open:
-            ser.close()
-            serial_is_open = False
-            print("Serial communication stopped.")
-        else:
-            print("Serial port is already closed.")
-        self.destroy()
+            response = messagebox.askyesno("Confirmation", "The application is currently running. Are you sure you want to exit?")
+            if response:
+                self.destroy()
 
     def retrieveDevices(self):
           while True:
