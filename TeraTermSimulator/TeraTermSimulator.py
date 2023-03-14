@@ -7,14 +7,21 @@ import serial
 import serial.tools.list_ports
 
 def handleIncomingText(serial, myGUI):
-    while serial.serialPort.is_open:
-        if serial.serialDataReceived != "":
-            print(serial.serialDataReceived)
-            #myGUI.serialReceiveTextBox + serial.serialDataReceived
-            myGUI.serialReceiveTextBox.insert('end', serial.serialDataReceived.encode())
-            serial.serialDataReceived = ""    
-            myGUI.serialReceiveTextBox.see('end')  # scroll to the end of the textbox
+    while True:
+        if serial.serialPort is None:
+            print("Error: Serial port is not open.")
+            break
+        if serial.serialPort.is_open:
+            if serial.serialDataReceived != "":
+                print(serial.serialDataReceived)
+                myGUI.serialReceiveTextBox.insert('end', serial.serialDataReceived.encode())
+                serial.serialDataReceived = ""    
+                myGUI.serialReceiveTextBox.see('end')  # scroll to the end of the textbox
+        else:
+            print("Error: Serial port is not open.")
+            break
         time.sleep(0.1)
+
 
 
 def startThreads(serial, myGUI):

@@ -238,14 +238,20 @@ class App(customtkinter.CTk):
 
     def startSerCommsEvent(self):
         global serial_is_open, ser, thread              
-        self.mySerial.openPort()
-        TeraTermSimulator.startThreads(self.mySerial, self)
-        print("Serial communication started.")
+        selected_port = self.comportCombo.get() 
+        if self.mySerial.openPort(selected_port):
+            TeraTermSimulator.startThreads(self.mySerial, self)
+            print("Serial communication started.")
         # Deactivate the Start button and activate the Stop button and Exit button
-        self.startButton.configure(state="disabled")
-        self.stopButton.configure(state="normal")
-        self.exitButton.configure(state="disabled")
-        self.led.configure(bg="green")
+            self.startButton.configure(state="disabled")
+            self.stopButton.configure(state="normal")
+            self.exitButton.configure(state="disabled")
+            self.led.configure(bg="green")
+        else:
+            tkinter.messagebox.showerror("Error", "Failed to open serial port.")
+
+        # Display an error message to the user here, if desired.
+
 
     def stopFire(self):
         self.mySerial.write("play stop\r\n".encode())
