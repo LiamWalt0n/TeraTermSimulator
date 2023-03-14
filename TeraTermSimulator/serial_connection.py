@@ -1,3 +1,4 @@
+import tkinter
 import serial
 import serial.tools.list_ports
 
@@ -13,22 +14,29 @@ class SerialConnection:
     def __init__(self):
         heheh = 0
 
-    def openPort(self):
-        self.port = self.select_port()
+    def openPort(self, selected_port):
+        self.port = selected_port
         if self.port is not None:
-            self.serialPort = serial.Serial(
-                port=self.port,
-                baudrate=115200,
-                bytesize=serial.EIGHTBITS,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE
-            )
-            print(f"Port {self.port} is opened!")
+            try:
+                self.serialPort = serial.Serial(
+                    port=self.port,
+                    baudrate=115200,
+                    bytesize=serial.EIGHTBITS,
+                    parity=serial.PARITY_NONE,
+                    stopbits=serial.STOPBITS_ONE,
+                    timeout=1  # adjust this to match the expected response time from the device or software
+                )
+                print(f"Port {self.port} is opened!")
+                return True
+            except serial.SerialException:
+                print(f"Failed to open port {self.port}")
+                return False
         else:
             print("No available ports found!")
+            return False
 
     def closePort(self):
-        if self.serialPort.is_open:
+        if self.serialPort and self.serialPort.is_open:
             self.serialPort.close()
             print("Serial port has closed")
         else:
@@ -65,7 +73,10 @@ class SerialConnection:
             return self.serialPort.readline().decode().strip()
         return None
 
+   
+
     def read_from_port(self):
+
         while self.serialPort.is_open:
             if self.is_open:
                 try:
@@ -77,3 +88,4 @@ class SerialConnection:
                     pass
             else:
                 pass
+
