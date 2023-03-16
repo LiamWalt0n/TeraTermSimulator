@@ -27,17 +27,12 @@ class LED(CTkCanvas):
         self.led = self.create_oval(0, 0, radius * 2, radius * 2, fill=self.color)
         self.move(self.led, self.winfo_width()/2 - radius, self.winfo_height()/2 - radius)
 
-
     def set_color(self, color):
         self.color = color
         self.itemconfigure(self.led, fill=color)
 
-
-
-
-
 customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark", "Light"
-customtkinter.set_default_color_theme("green")  # Themes: "blue" (standard), "green", "dark-blue"
+customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 
 class App(customtkinter.CTk):
     def __init__(self, serial):
@@ -80,11 +75,10 @@ class App(customtkinter.CTk):
         self.startButton.grid(row=1, column=0, padx=20, pady=10)
         self.stopButton = customtkinter.CTkButton(self.serialCommsFrame, text="Stop", command=self.stopSerCommsEvent, state="disabled")
         self.stopButton.grid(row=2, column=0, padx=20, pady=10)
-         # Create and display green LED
+        # Create and display green LED
         self.led = LED(self.serialCommsFrame, size=20, color="grey")
         self.led.grid(row=3, column=0, padx=20, pady=10)
 
-       
         self.serialCommsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Serial Comms Connection")
         self.serialCommsLabel.grid(row=5, column=0, columnspan=1, padx=10, pady=10, sticky="")
         self.comportCombo = customtkinter.CTkComboBox(self.serialCommsFrame, 
@@ -114,7 +108,6 @@ class App(customtkinter.CTk):
         self.evenOptions.add("Command Options")
         self.evenOptions.add("Trigger Fire")
         self.evenOptions.tab("Command Options").grid_columnconfigure(0, weight=1)  # configure grid of individual tabs
-        
         self.combobox_1 = customtkinter.CTkComboBox(self.evenOptions.tab("Command Options"),
                                                     values=["an <n> <c> [r]          : Set analogue for dev <n> channel <c> [to r]",
                                                             "ar <n>                  : Show analogue readings for device <n>", "ramp <n> <c> <s> <f> <d>: Ramp analogue channel c from s to f"
@@ -138,6 +131,7 @@ class App(customtkinter.CTk):
                                                            command=self.clearTextBox)
         self.clearTextBox.grid(row=4, column=0, padx=20, pady=(10, 10))
 
+
       # Trigger Fire Tab Options
         self.evenOptions.tab("Trigger Fire").grid_columnconfigure(0, weight=1)
         self.evenOptions.tab("Trigger Fire").grid_rowconfigure(0, weight=0)
@@ -152,13 +146,17 @@ class App(customtkinter.CTk):
 
         self.send_command_button1 = customtkinter.CTkButton(self.evenOptions.tab("Trigger Fire"), text="Send Command",
                                                    command=self.comboBoxsend2)
-        self.send_command_button1.grid(row=2, column=0, padx=20, pady=(10, 20), sticky=tkinter.N + tkinter.S + tkinter.E + tkinter.W)
+        self.send_command_button1.grid(row=2, column=0, padx=20, pady=(10, 10))
         
         self.clearTextBox1 = customtkinter.CTkButton(self.evenOptions.tab("Trigger Fire"), text="Stop Fire",
                                                            command=self.stopFire)
+        self.clearTextBox1.grid(row=3, column=0, padx=20, pady=(10, 10))
+        self.clearTextBox1 = customtkinter.CTkButton(self.evenOptions.tab("Trigger Fire"), text="Clear",
+                                                           command=self.clearTextBox)
         self.clearTextBox1.grid(row=4, column=0, padx=20, pady=(10, 10))
 
-        # create uiOptions frame
+
+      # create uiOptions frame
         self.uiOptions_frame = customtkinter.CTkFrame(self, width=250)
         self.uiOptions_frame.grid(row=1, column=3, padx=(20, 0), pady=(20, 0))
         self.combobox_1.set("Command List")
@@ -176,7 +174,13 @@ class App(customtkinter.CTk):
 
     def comboBoxsendVariables(self):
         global textDataReceived
-        dialog = customtkinter.CTkInputDialog(text=self.combobox_1.get(), title="Send Selected Command")
+        # get the first two characters of the selected item in combobox_1
+        selected_command = self.combobox_1.get()
+        if selected_command:
+            selected_command = selected_command[:20]
+        # create the input dialog with the first two characters entered in the input field
+        dialog = customtkinter.CTkInputDialog(text=selected_command, title="Send Selected Command")
+        #dialog = customtkinter.CTkInputDialog(text=self.combobox_1.get(), title="Send Selected Command")
         result = dialog.get_input()
         if result is not None:
             result = result + "\r\n"
@@ -265,10 +269,6 @@ class App(customtkinter.CTk):
     def open_file_event(self):
         # return filedialog.askopenfilename() // This is to open a file
         self.destroy()
-
-    from tkinter import messagebox
-
-    from tkinter import messagebox
 
     def onExit(self):
         global running
