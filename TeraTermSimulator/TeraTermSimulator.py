@@ -14,13 +14,17 @@ def handleIncomingText(serial, myGUI):
         if serial.serialPort.is_open:
             if serial.serialDataReceived != "":
                 print(serial.serialDataReceived)
-                myGUI.serialReceiveTextBox.insert('end', serial.serialDataReceived.encode())
-                serial.serialDataReceived = ""    
-                myGUI.serialReceiveTextBox.see('end')  # scroll to the end of the textbox
+              
+                if hasattr(myGUI, 'textboxWindow'):
+                    myGUI.AddToRunningTextBox(serial.serialDataReceived)
+
+                    serial.serialDataReceived = ""    
+                    myGUI.serialReceiveTextBox.see('end')  # scroll to the end of the textbox
         else:
             print("Error: Serial port is not open.")
             break
         time.sleep(0.1)
+
 
 
 
