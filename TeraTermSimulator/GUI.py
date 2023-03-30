@@ -14,22 +14,11 @@ import serial
 import TeraTermSimulator
 import serial_connection
 from customtkinter import CTkCanvas
+import tkinter.messagebox as msgbox
 
 
-class LED(CTkCanvas):
-    def __init__(self, master, size=20, color="green", **kwargs):
-        super().__init__(master, width=size, height=size, **kwargs)
-        self.color = color
-        self.create_led()
 
-    def create_led(self):
-        radius = self.winfo_width() / 2
-        self.led = self.create_oval(0, 0, radius * 2, radius * 2, fill=self.color)
-        self.move(self.led, self.winfo_width()/2 - radius, self.winfo_height()/2 - radius)
 
-    def set_color(self, color):
-        self.color = color
-        self.itemconfigure(self.led, fill=color)
 
 customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -37,111 +26,109 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 class App(customtkinter.CTk):
     def __init__(self, serial):
         super().__init__()
+
+        result = msgbox.showwarning("Warning", "Make sure you connect to the serial comms via the toolbar")
+        if result == "ok":
        
-        self.mySerial = serial
+            self.mySerial = serial
 
         # configure window
-        self.title("Simulator")
-        self.geometry(f"{1100}x{580}")
+        self.title("Vigilon Loop Device Simulator Tool")
+        self.geometry(f"{800}x{300}")
 
         # configure grid layout (4x4)
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure((2, 3), weight=0)
         self.grid_rowconfigure((0, 1, 2), weight=1)
-        
+
         # Create toolbar
         menu = Menu(self)
         item = Menu(menu)
         option = Menu(self)
         about = Menu(self)
+        setup = Menu(self)
         item.add_command(label='Clear', command=self.clearTextBox)
         item.add_command(label='Build')
+        setup.add_command(label='Serial Port', command=self.openSerialPortWindow)
+        option.add_command(label='Show Textbox', command=self.showTextboxWindow)
         option.add_command(label='Import')
         option.add_command(label='Exit', command=self.onExit)
         menu.add_cascade(label='File', menu=item)
         menu.add_cascade(label='Options', menu=option)
+        menu.add_cascade(label='Setup', menu=setup)
         menu.add_cascade(label='About', menu=about)
         about.add_command(label='About Device Simulator', command=self.aboutDeviceSimulator)
+        self.config(menu=menu)
+
+        self.addToRunningFlag = True
         
         self.config(menu=menu)
 
-        # create sidebar frame with widgets
+        ## create sidebar frame with widgets
         self.serialCommsFrame = customtkinter.CTkFrame(self, width=140, corner_radius=0)
         self.serialCommsFrame.grid(row=0, column=0, rowspan=4, sticky="nsew")
-        self.serialCommsFrame.grid_rowconfigure(4, weight=1)
-        self.startComsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Start Comms Connection", font=customtkinter.CTkFont(size=20, weight="bold"))
-        self.startComsLabel.grid(row=0, column=0, padx=20, pady=(20, 10))
-        self.startButton = customtkinter.CTkButton(self.serialCommsFrame, text="Start", command=self.startSerCommsEvent)
-        self.startButton.grid(row=1, column=0, padx=20, pady=10)
-        self.stopButton = customtkinter.CTkButton(self.serialCommsFrame, text="Stop", command=self.stopSerCommsEvent, state="disabled")
-        self.stopButton.grid(row=2, column=0, padx=20, pady=10)
-        # Create and display green LED
-        self.led = LED(self.serialCommsFrame, size=20, color="grey")
-        self.led.grid(row=3, column=0, padx=20, pady=10)
-
-        self.serialCommsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Serial Comms Connection")
-        self.serialCommsLabel.grid(row=5, column=0, columnspan=1, padx=10, pady=10, sticky="")
-        self.comportCombo = customtkinter.CTkComboBox(self.serialCommsFrame, 
-                                                    values=serial.ports)
-        self.comportCombo.grid(row=6, column=0, pady=10, padx=20, sticky="n")
-        self.baudrateCombo = customtkinter.CTkComboBox(self.serialCommsFrame,
-                                                    values=["115200"])
-        self.baudrateCombo.grid(row=7, column=0, pady=10, padx=20, sticky="n")
+        self.serialCommsFrame.grid_rowconfigure(6, weight=1)
         
+        self.serialCommsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Device Type: ")
+        self.serialCommsLabel.grid(row=1, column=0, columnspan=1, padx=10, pady=20, sticky="")
+        self.serialCommsLabel2 = customtkinter.CTkLabel(self.serialCommsFrame, text="Sector: ")
+        self.serialCommsLabel2.grid(row=2, column=0, columnspan=1, padx=10, pady=20, sticky="")
+        self.serialCommsLabel3 = customtkinter.CTkLabel(self.serialCommsFrame, text="Sector State: ")
+        self.serialCommsLabel3.grid(row=3, column=0, columnspan=1, padx=10, pady=20, sticky="")
+        self.serialCommsLabel4 = customtkinter.CTkLabel(self.serialCommsFrame, text="Channels: ")
+        self.serialCommsLabel4.grid(row=4, column=0, columnspan=1, padx=10, pady=20, sticky="")
+      
        # TREE VIEW ADDED HERE
         self.treeview = ttk.Treeview(self, height=6)
-        self.treeview.grid(row=1, column=1, columnspan=2, padx=(20, 0), pady=(50, 50), sticky="nsew")
-
-        self.loadTreeBtn = customtkinter.CTkButton(self, text="Load Tree", width=30, height=30, command=self.loadTree)
-        self.loadTreeBtn.grid(row=3, column=1, padx=40, pady=10)
-
-        self.exitButton = customtkinter.CTkButton(master=self, text="Exit", command = self.onExit, border_width=2, text_color=("gray10", "#DCE4EE"))
-        self.exitButton.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
-
+        self.treeview.grid(row=0, column=1, columnspan=1, padx=(20, 0), pady=(50, 30), sticky="nsew")
+        
+       # self.exitButton = customtkinter.CTkButton(master=self, text="Exit", width=30, height=30, command = self.onExit, border_width=2, text_color=("gray10", "#DCE4EE"))
+       # self.exitButton.grid(row=3, column=3, padx=(20, 20), pady=(10, 0), sticky="nsew")
+        
        # create textbox
-        self.serialReceiveTextBox = customtkinter.CTkTextbox(self, width=250)
-        self.serialReceiveTextBox.grid(row=0, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
+       # self.serialReceiveTextBox = customtkinter.CTkTextbox(self, width=250)
+        #self.serialReceiveTextBox.grid(row=0, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
         
         # create tabview
-        self.evenOptions = customtkinter.CTkTabview(self, width=250)
+        self.evenOptions = customtkinter.CTkTabview(self, width=250, height=100)
         self.evenOptions.grid(row=0, column=3, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.evenOptions.add("Command Options")
         self.evenOptions.add("Trigger Fire")
         self.evenOptions.tab("Command Options").grid_columnconfigure(0, weight=1)  # configure grid of individual tabs
         self.combobox_1 = customtkinter.CTkComboBox(self.evenOptions.tab("Command Options"),
-                                                    values=["an <n> <c> [r]          : Set analogue for dev <n> channel <c> [to r]",
-                                                            "ar <n>                  : Show analogue readings for device <n>", "ramp <n> <c> <s> <f> <d>: Ramp analogue channel c from s to f"
-                                                            "scale <n> <c> <s>       : Scale analogue channel c", "dc <n>                  : Show device <n> config", "de <n>                  : Dump eeprom of device <n>"
-                                                            "df <x> <y>              : Dump <y> bytes of serial flash from address <x>", "dd <n> [m]              : Show status of device n [to m]", "ds <n> [m]              : Show status of device n [to m] (shortform)"
-                                                            "we <n> <x> <y...>       : Write eeprom to device n", "ce <n> [m]              : Check eeprom checksums of device n [to m]"
-                                                            "map                     : Show map", "wiring split/join <n><p>: Split/Join the wiring at L1/L2/Comm", "reply <n> <o>           : Apply an offset to the reply time for device n"
-                                                            "play <n> <num/file/stop>: Play analogue simulation to device n", "device add              : Add a new device", "device delete all       : Delete all devices"
-                                                            "device <n>              : Change a device", "breaker <o/c> <n> <dev> : Open/Close Breaker n at device.", "lose <n>                : Lose a device."
-                                                            "restore <n>             : Restore a device.", "exec <file>             : Execute commands from file", "load backup <file>      : Load devices backup file (bin)"
-                                                            "save backup <file>      : Save devices backup file (bin)", "save config <file/->    : Save devices config file/output (text)",
-                                                            "debug n/save            : Set debug level to n or save current to flash", "time [hh:mm:ss dd/mm/yy]: Set the time"])
+                                                    values=["Set analogue for dev <n> channel <c> [to r]",
+                                                            "Show analogue readings for device <n>", "Ramp analogue channel c from s to f"
+                                                            "Scale analogue channel c", "Show device <n> config", "Dump eeprom of device <n>"
+                                                            "Dump <y> bytes of serial flash from address <x>", "Show status of device n [to m]", "Show status of device n [to m] (shortform)"
+                                                            "Write eeprom to device n", "Check eeprom checksums of device n [to m]"
+                                                            "Show map", "wiring split/join <n><p>: Split/Join the wiring at L1/L2/Comm", "Apply an offset to the reply time for device n"
+                                                            "Play analogue simulation to device n", "Add a new device", "Delete all devices"
+                                                            "Change a device", "Open/Close Breaker n at device.", "Lose a device."
+                                                            "Restore a device.", "Execute commands from file", "Load devices backup file (bin)"
+                                                            "Save devices backup file (bin)", "Save devices config file/output (text)",
+                                                            "Set debug level to n or save current to flash", "Set the time"])
         self.combobox_1.grid(row=1, column=0, padx=20, pady=(10, 10))
-        self.string_input_button = customtkinter.CTkButton(self.evenOptions.tab("Command Options"), text="Enter Command Manually",
-                                                           command=self.manualInputCommand)
-        self.string_input_button.grid(row=2, column=0, padx=20, pady=(10, 10))
         self.send_command_button = customtkinter.CTkButton(self.evenOptions.tab("Command Options"), text="Send Command",
                                                            command=self.comboBoxsendVariables)
-        self.send_command_button.grid(row=3, column=0, padx=20, pady=(10, 10))
-        self.clearTextBox = customtkinter.CTkButton(self.evenOptions.tab("Command Options"), text="Clear",
-                                                           command=self.clearTextBox)
-        self.clearTextBox.grid(row=4, column=0, padx=20, pady=(10, 10))
-
-
+        self.send_command_button.grid(row=2, column=0, padx=20, pady=(10, 10))
+        #self.string_input_button = customtkinter.CTkButton(self.evenOptions.tab("Command Options"), text="Enter Command Manually",
+        #                                                   command=self.manualInputCommand)
+        #self.string_input_button.grid(row=3, column=0, padx=20, pady=(10, 10))
+        #self.clearTextBox = customtkinter.CTkButton(self.popupwindow.tab("Command Options"), text="Clear",
+        #                                                   command=self.clearTextBox)
+        #self.clearTextBox.grid(row=5, column=0, padx=20, pady=(10, 10))
+        self.loadTreeBtn = customtkinter.CTkButton(self.evenOptions.tab("Command Options"), text="Load Tree", command=self.loadTree)
+        self.loadTreeBtn.grid(row=4, column=0, padx=20, pady=(10, 10))
+        
       # Trigger Fire Tab Options
         self.evenOptions.tab("Trigger Fire").grid_columnconfigure(0, weight=1)
         self.evenOptions.tab("Trigger Fire").grid_rowconfigure(0, weight=0)
         self.evenOptions.tab("Trigger Fire").grid_rowconfigure(1, weight=0)
         self.evenOptions.tab("Trigger Fire").grid_rowconfigure(2, weight=0)
         self.evenOptions.tab("Trigger Fire").grid_rowconfigure(3, weight=0)
-    
 
         self.combobox_fire = customtkinter.CTkComboBox(self.evenOptions.tab("Trigger Fire"),
-                                            values=["help\n\r","Play 1 0\n\r"])
+                                            values=["Real Fire","Optical Fire", "MCP"])
         self.combobox_fire.grid(row=1, column=0, padx=20, pady=(10, 10))
 
         self.send_command_button1 = customtkinter.CTkButton(self.evenOptions.tab("Trigger Fire"), text="Send Command",
@@ -151,45 +138,54 @@ class App(customtkinter.CTk):
         self.clearTextBox1 = customtkinter.CTkButton(self.evenOptions.tab("Trigger Fire"), text="Stop Fire",
                                                            command=self.stopFire)
         self.clearTextBox1.grid(row=3, column=0, padx=20, pady=(10, 10))
-        self.clearTextBox1 = customtkinter.CTkButton(self.evenOptions.tab("Trigger Fire"), text="Clear",
-                                                           command=self.clearTextBox)
-        self.clearTextBox1.grid(row=4, column=0, padx=20, pady=(10, 10))
-
-
-      # create uiOptions frame
-        self.uiOptions_frame = customtkinter.CTkFrame(self, width=250)
-        self.uiOptions_frame.grid(row=1, column=3, padx=(20, 0), pady=(20, 0))
-        self.combobox_1.set("Command List")
-        self.combobox_fire.set("Fire List")
+       
+        
+      # create uioptions frame
+        #self.uioptions_frame = customtkinter.ctkframe(self, width=250)
+        #self.uioptions_frame.grid(row=1, column=3, padx=(20, 0), pady=(20, 0))
+        self.combobox_1.set("command list")
+        self.combobox_fire.set("fire list")
 
     ## COMMANDS FOR FUNCTIONS
 
-    # This function prints directly without being prompted for user input
-    #def comboBoxsend1(self):
-    #   global textDataReceived
-    #   command_option = self.combobox_1.get()
-    #   ser.write(command_option.encode())
-    #   time.sleep(1000)
-    #   self.serialReceiveTextBox.insert(0.1, textDataReceived)
+    def showTextboxWindow(self):
+        if not hasattr(self, 'textboxWindow'):
+            self.textboxWindow = Toplevel(self)
+            self.textboxWindow.title("Command Terminal")
+            self.textboxWindow.geometry("450x325")
+
+            self.serialReceiveTextBox = customtkinter.CTkTextbox(self.textboxWindow, width=400, height=300)
+            self.serialReceiveTextBox.pack()
+            clearTextboxBtn = customtkinter.CTkButton(self.textboxWindow, text="Clear", command=self.clearTextBox)
+            closeTextboxBtn = customtkinter.CTkButton(self.textboxWindow, text="Close", command=self.closeTextboxWindow)
+
+# Use the `pack` method with the `side` option to place the buttons side by side
+            clearTextboxBtn.pack(side='left', padx=5)
+            closeTextboxBtn.pack(side='right', padx=5)
+
+
+    def closeTextboxWindow(self):
+        global textboxWindow
+        self.textboxWindow.destroy()
 
     def comboBoxsendVariables(self):
         global textDataReceived
-        # get the first two characters of the selected item in combobox_1
+    # get the first two characters of the selected item in combobox_1
         selected_command = self.combobox_1.get()
         if selected_command:
             selected_command = selected_command[:20]
-        # create the input dialog with the first two characters entered in the input field
+    # create the input dialog with the first two characters entered in the input field
         dialog = customtkinter.CTkInputDialog(text=selected_command, title="Send Selected Command")
-        #dialog = customtkinter.CTkInputDialog(text=self.combobox_1.get(), title="Send Selected Command")
+    #dialog = customtkinter.CTkInputDialog(text=self.combobox_1.get(), title="Send Selected Command")
         result = dialog.get_input()
         if result is not None:
             result = result + "\r\n"
             self.mySerial.write(result.encode())
             print("Result:", result)
-            self.serialReceiveTextBox.insert(0.1, self.mySerial.serialDataReceived.encode())
+            self.showTextboxWindow()
+            self.serialReceiveTextBox.insert('end', self.mySerial.serialDataReceived.encode())
         else:
             print("Dialog was cancelled.")
-
 
     def loadTree(self):            
         # Send "ds" command to the serial port
@@ -200,31 +196,43 @@ class App(customtkinter.CTk):
     
     def comboBoxsend2(self):
         command_option_2 = self.combobox_fire.get()
-    
-        if command_option_2 == "Stop":
+
+    # Create the dialog window
+        dialog = Toplevel(self)
+        dialog.title("Select option")
+
+    # Create buttons for each option
+        btn_stop = customtkinter.CTkButton(dialog, text="Stop", command=lambda: self.sendOption("play 1 0", dialog))
+        btn_stop.pack()
+        btn_other = customtkinter.CTkButton(dialog, text="Other", command=lambda: self.sendOption("Other", dialog))
+        btn_other.pack()
+
+    # Show the dialog window
+        dialog.grab_set()
+        dialog.focus_set()
+        dialog.wait_window()
+
+    def sendOption(self, option, dialog):
+        if option == "Stop":
         # Close the serial port
             self.mySerial.close()
         else:
         # Open the serial port if it's not already open
             if not self.mySerial.is_open:
                 self.mySerial.open()
-            
+
         # Write to the serial port
-        self.mySerial.write(command_option_2.encode())
+            self.mySerial.write(command_option_2.encode())
+    
+            if not hasattr(self, 'textboxWindow'):
+                self.showTextboxWindow()
+        
+            self.serialReceiveTextBox.insert('end', self.mySerial.serialDataReceived)
 
-    def manualInputCommand(self):
-        dialog = customtkinter.CTkInputDialog(text="Type in a command or select from the list:", title="CTkInputDialog")
-        input_str = dialog.get_input()
-        if input_str is not None:
-            input_str += "\r\n"
-            self.mySerial.write(input_str.encode())
-            self.serialReceiveTextBox.insert(0.1, self.mySerial.serialDataReceived)
-            print("Result:", input_str)
-        else:
-            print("Dialog was cancelled.")
+    # Close the dialog window
+        dialog.destroy()
 
-
-
+            
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
         
@@ -235,28 +243,52 @@ class App(customtkinter.CTk):
     def stopSerCommsEvent(self):
         # Deactivate the Stop button and activate the Start button and Exit button
         self.mySerial.closePort()
-        self.startButton.configure(state="normal")
-        self.stopButton.configure(state="disabled")
-        self.exitButton.configure(state="normal")
-        self.led.configure(bg="red")
+        #self.startButton.configure(state="normal")
+        #self.stopButton.configure(state="disabled")
+        #self.exitButton.configure(state="normal")
 
-    def startSerCommsEvent(self):
+    def openSerialPortWindow(self):
+        # Create a new window
+        top = tkinter.Toplevel(self)
+        top.title("Serial Port Selection")
+
+        # Create the label
+        self.serialCommsLabel = customtkinter.CTkLabel(top, text="Serial Comms Connection")
+        self.serialCommsLabel.grid(row=5, column=0, columnspan=1, padx=10, pady=10, sticky="")
+
+        # Create the comportCombo combobox
+        self.comportCombo = customtkinter.CTkComboBox(top, 
+                                                    values=[port.device for port in serial.tools.list_ports.comports()])
+        self.comportCombo.grid(row=6, column=0, pady=10, padx=20, sticky="n")
+
+        # Create the baudrateCombo combobox
+        self.baudrateCombo = customtkinter.CTkComboBox(top,
+                                                    values=["115200"])
+        self.baudrateCombo.grid(row=7, column=0, pady=10, padx=20, sticky="n")
+
+        # Create the start button
+        self.startButton = customtkinter.CTkButton(top, text="Start", command=lambda: self.startSerCommsEvent(top))
+        self.startButton.grid(row=8, column=0, pady=10, padx=20, sticky="n")
+        self.stopButton = customtkinter.CTkButton(top, text="Stop", command=self.stopSerCommsEvent)
+        self.stopButton.grid(row=9, column=0, pady=10, padx=20, sticky="n")
+
+    def startSerCommsEvent(self, top):
         global serial_is_open, ser, thread              
         selected_port = self.comportCombo.get() 
         if self.mySerial.openPort(selected_port):
             TeraTermSimulator.startThreads(self.mySerial, self)
             print("Serial communication started.")
-        # Deactivate the Start button and activate the Stop button and Exit button
             self.startButton.configure(state="disabled")
             self.stopButton.configure(state="normal")
-            self.exitButton.configure(state="disabled")
-            self.led.configure(bg="green")
+            #self.exitButton.configure(state="disabled")
+
+            # Close the popup window
+            top.destroy()
         else:
             tkinter.messagebox.showerror("Error", "Failed to open serial port.")
-
+            
         # Display an error message to the user here, if desired.
-
-
+        
     def stopFire(self):
         self.mySerial.write("play stop\r\n".encode())
      
@@ -287,7 +319,9 @@ class App(customtkinter.CTk):
                 self.treeview.insert('', 'end', text=device)
 
     def clearTextBox(self):
-        self.serialReceiveTextBox.delete('1.0', END)
+        if hasattr(self, 'serialReceiveTextBox'):
+            self.serialReceiveTextBox.delete('1.0', END)
+
 
     def updateTextBox(self, someText):
         self.serialReceiveTextBox += someText
@@ -297,3 +331,15 @@ class App(customtkinter.CTk):
             self.clearTextBox.config(state="disabled")
         else:
             self.clearTextBox.config(state="normal")
+
+    def AddToRunningTextBox(self, textToDisplay):
+        if self.addToRunningFlag == True:
+            if hasattr(self, 'textboxWindow'):
+                self.showTextboxWindow()
+                self.serialReceiveTextBox.insert('end', textToDisplay)
+
+
+
+    def manageRunningTextBox(self, addFlag):
+        self.addToRunningFlag = addFlag
+        print(self.addToRunningFlag)
