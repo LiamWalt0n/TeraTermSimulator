@@ -159,24 +159,19 @@ class App(customtkinter.CTk):
             clearTextboxBtn = customtkinter.CTkButton(self.textboxWindow, text="Clear", command=self.clearTextBox)
             closeTextboxBtn = customtkinter.CTkButton(self.textboxWindow, text="Close", command=self.closeTextboxWindow)
 
-# Use the `pack` method with the `side` option to place the buttons side by side
             clearTextboxBtn.pack(side='left', padx=5)
             closeTextboxBtn.pack(side='right', padx=5)
 
 
     def closeTextboxWindow(self):
-        global textboxWindow
         self.textboxWindow.destroy()
+        delattr(self, 'textboxWindow')
 
     def comboBoxsendVariables(self):
-        global textDataReceived
-    # get the first two characters of the selected item in combobox_1
         selected_command = self.combobox_1.get()
         if selected_command:
             selected_command = selected_command[:20]
-    # create the input dialog with the first two characters entered in the input field
         dialog = customtkinter.CTkInputDialog(text=selected_command, title="Send Selected Command")
-    #dialog = customtkinter.CTkInputDialog(text=self.combobox_1.get(), title="Send Selected Command")
         result = dialog.get_input()
         if result is not None:
             result = result + "\r\n"
@@ -186,7 +181,8 @@ class App(customtkinter.CTk):
             self.serialReceiveTextBox.insert('end', self.mySerial.serialDataReceived.encode())
         else:
             print("Dialog was cancelled.")
-
+            return
+        
     def loadTree(self):            
         # Send "ds" command to the serial port
             self.mySerial.commandInProgress = True
@@ -195,42 +191,54 @@ class App(customtkinter.CTk):
             threadCommand.start()
     
     def comboBoxsend2(self):
-        command_option_2 = self.combobox_fire.get()
+        selected_command = self.combobox_fire.get()
+        if selected_command in ["Optical Fire", "MCP"]:
+            if selected_command == "Optical Fire":
+                self.mySerial.write("Optical Fire\r\n".encode())
+            elif selected_command == "MCP":
+                self.mySerial.write("MCP\r\n".encode())
 
-    # Create the dialog window
-        dialog = Toplevel(self)
-        dialog.title("Select option")
-
-    # Create buttons for each option
-        btn_stop = customtkinter.CTkButton(dialog, text="Stop", command=lambda: self.sendOption("play 1 0", dialog))
-        btn_stop.pack()
-        btn_other = customtkinter.CTkButton(dialog, text="Other", command=lambda: self.sendOption("Other", dialog))
-        btn_other.pack()
-
-    # Show the dialog window
-        dialog.grab_set()
-        dialog.focus_set()
-        dialog.wait_window()
-
-    def sendOption(self, option, dialog):
-        if option == "Stop":
-        # Close the serial port
-            self.mySerial.close()
-        else:
-        # Open the serial port if it's not already open
-            if not self.mySerial.is_open:
-                self.mySerial.open()
-
-        # Write to the serial port
-            self.mySerial.write(command_option_2.encode())
-    
             if not hasattr(self, 'textboxWindow'):
                 self.showTextboxWindow()
         
             self.serialReceiveTextBox.insert('end', self.mySerial.serialDataReceived)
+        else:
+        # Create the dialog window
+            dialog = Toplevel(self)
+            dialog.title("Select option")
+
+        # Create the CTkComboBox widget
+            options = ["play 1 0", "Other"]
+            playFireBtn = customtkinter.CTkComboBox(dialog, values=options, command=lambda: self.sendOption(playFireBtn.get(), dialog))
+            playFireBtn.pack()
+            btn_other = customtkinter.CTkButton(dialog, text="Start Fire", command=lambda: self.sendOption("Other", dialog))
+            btn_other.pack()
+
+        # Show the dialog window
+            dialog.grab_set()
+            dialog.focus_set()
+            dialog.wait_window()
+
+    def sendOption(self, option, dialog):
+        if option == "Stop":
+    # Close the serial port
+            self.mySerial.close()
+        else:
+    # Open the serial port if it's not already open
+            if not self.mySerial.is_open:
+                self.mySerial.open()
+
+    # Write to the serial port
+            self.mySerial.write(option.encode())
+
+            if not hasattr(self, 'textboxWindow'):
+                self.showTextboxWindow()
+    
+            self.serialReceiveTextBox.insert('end', self.mySerial.serialDataReceived)
 
     # Close the dialog window
         dialog.destroy()
+
 
             
     def change_appearance_mode_event(self, new_appearance_mode: str):
