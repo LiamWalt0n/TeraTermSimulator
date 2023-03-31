@@ -22,16 +22,7 @@ import serial.tools.list_ports
 
 
 def treeViewHandler(GUI, mySerial):
-    # Disable the loadTreeBtn button
-   # GUI.loadTreeBtn.configure(state="disabled")
-    # Disable the stopButton button
-    #GUI.string_input_button.configure(state="disabled")
-    #GUI.send_command_button.configure(state="disabled")
-    #GUI.clearTextBox.configure(state="disabled")
-    #GUI.send_command_button1.configure(state="disabled")
-    #GUI.clearTextBox1.configure(state="disabled")
-    #GUI.stopButton.configure(state="disabled")
-
+ 
     # Set the command data received flag to an empty string and wait for 2 seconds
     mySerial.commandDataReceived = ""
     time.sleep(2)
@@ -79,30 +70,27 @@ def treeViewHandler(GUI, mySerial):
   
             
             # Insert a new child item under the current item and increment the counter
-            child_id = GUI.treeview.insert(parent_id, 'end', count, text=sector)
+            child_id = GUI.treeview.insert(parent_id, 'end', count, text="Sector: "+sector)
             count += 1
 
             # Print the fifth element
             print(entry_fields[4])
 
+            # Repeat Below
+            position = mySerial.commandDataReceived.find("Anal:")
+
+            anal = mySerial.commandDataReceived[position+5:position+9]
+  
+            
+            # Insert a new child item under the current item and increment the counter
+            child_id = GUI.treeview.insert(parent_id, 'end', count, text="Channels: "+anal)
+            count += 1
+
+            # Print the fifth element
+            print(entry_fields[4])
+            
+          
     GUI.manageRunningTextBox(True)
     
     # Wait for 2 seconds
     time.sleep(2)
-
-    # Enable the loadTreeBtn button
-  #  GUI.loadTreeBtn.configure(state="normal")
-    # Enable the stopButton button
-    #GUI.stopButton.configure(state="normal")
-    #GUI.string_input_button.configure(state="normal")
-    #GUI.send_command_button.configure(state="normal")
-    #GUI.clearTextBox.configure(state="normal")
-    #GUI.send_command_button1.configure(state="normal")
-    #GUI.clearTextBox1.configure(state="normal")
-    #GUI.stopButton.configure(state="normal")
-
-
-
-
-
-
