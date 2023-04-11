@@ -19,10 +19,14 @@ import GUI
 import serial_connection
 import serial
 import serial.tools.list_ports
+import tkinter as tk
 
 
 def treeViewHandler(GUI, mySerial):
- 
+    GUI.loading_label = tk.Label(GUI, text="Loading...")
+    GUI.loading_label.grid(row=0, column=1, padx=(20, 0), pady=(50, 30), sticky="nsew")
+    GUI.loading_label.lift()
+    GUI.update()
     # Set the command data received flag to an empty string and wait for 2 seconds
     mySerial.commandDataReceived = ""
     time.sleep(2)
@@ -39,9 +43,14 @@ def treeViewHandler(GUI, mySerial):
     # Split the command data received by newline character
     command_data_lines = mySerial.commandDataReceived.splitlines()
 
+    GUI.send_command_button.configure(state="disabled")
+    GUI.loadTreeBtn.configure(state="disabled")
+    GUI.send_command_button1.configure(state="disabled")
+    GUI.clearTextBox1.configure(state="disabled")
+
     # Loop through each entry in the command data received
     for command_line in command_data_lines:
-
+        GUI.manageRunningTextBox(False)
         # Split each entry by comma character
         entry_fields = command_line.split(",")
         # If there are at least 4 elements in the entry
@@ -56,9 +65,7 @@ def treeViewHandler(GUI, mySerial):
             #Function in serial_connection
             mySerial.commandDataReceived = ""
             mySerial.commandInProgress = True
-            
-            GUI.manageRunningTextBox(False)
-            
+          
             input_str = "dd " +  entry_fields[0] + "\r\n"
             mySerial.write(input_str.encode())
             time.sleep(0.25)
@@ -88,9 +95,41 @@ def treeViewHandler(GUI, mySerial):
 
             # Print the fifth element
             print(entry_fields[4])
+
+            dSectorState = mySerial.commandDataReceived[26]
+
+            try:
+                dSectorState = int(mySerial.commandDataReceived[26])
+            except ValueError:
+                dSectorState = ""
+
+            if dSectorState == 0:
+                dSectorState = "N/A"
+            elif dSectorState == 250:
+                dSectorState = "Off"
+            elif dSectorState == 251:
+                dSectorState = 1
+            elif dSectorState == 252:
+                dSectorState = 2
+            elif dSectorState == 253:
+                dSectorState = 3
+            elif dSectorState == 254:
+                dSectorState = 4
             
-          
+            child_id = GUI.treeview.insert(parent_id, 'end', count, text="Sector State: " + str(dSectorState))
+            count +=1
+            print(dSectorState)
+            
     GUI.manageRunningTextBox(True)
-    
+
+    GUI.loading_label.destroy()
+
+     # Disable buttons
+    GUI.send_command_button.configure(state="normal")
+    GUI.loadTreeBtn.configure(state="normal")
+    GUI.send_command_button1.configure(state="normal")
+    GUI.clearTextBox1.configure(state="normal")
     # Wait for 2 seconds
     time.sleep(2)
+
+     
