@@ -23,6 +23,8 @@ class App(customtkinter.CTk):
     def __init__(self, serial):
         super().__init__()
 
+
+
         result = msgbox.showwarning("Warning", "Make sure you connect to the serial comms via the toolbar")
         if result == "ok":
        
@@ -72,32 +74,33 @@ class App(customtkinter.CTk):
         #self.serialCommsLabelValue0.grid(row=1, column=0, columnspan=1, padx=10, pady=5, sticky="")
 
         # Update the rest of the labels
-        self.serialCommsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Device Type: ")
-        self.serialCommsLabel.grid(row=1, column=0, columnspan=1, padx=10, pady=20, sticky="")
-        self.serialCommsLabelValue1 = customtkinter.CTkLabel(self.serialCommsFrame, text="")
-        self.serialCommsLabelValue1.grid(row=3, column=0, columnspan=1, padx=10, pady=5, sticky="")
+        #self.serialCommsLabel = customtkinter.CTkLabel(self.serialCommsFrame, text="Device Type: ")
+        #self.serialCommsLabel.grid(row=1, column=0, columnspan=1, padx=10, pady=20, sticky="")
+        #self.serialCommsLabelValue1 = customtkinter.CTkLabel(self.serialCommsFrame, text="")
+        #self.serialCommsLabelValue1.grid(row=3, column=0, columnspan=1, padx=10, pady=5, sticky="")
 
         self.serialCommsLabel2 = customtkinter.CTkLabel(self.serialCommsFrame, text="Sector: ")
         self.serialCommsLabel2.grid(row=2, column=0, columnspan=1, padx=10, pady=20, sticky="")
         self.serialCommsLabelValue2 = customtkinter.CTkLabel(self.serialCommsFrame, text="")
-        self.serialCommsLabelValue2.grid(row=5, column=0, columnspan=1, padx=10, pady=5, sticky="")
+        self.serialCommsLabelValue2.grid(row=3, column=0, columnspan=1, padx=10, pady=5, sticky="")
 
         self.serialCommsLabel3 = customtkinter.CTkLabel(self.serialCommsFrame, text="Sector State: ")
-        self.serialCommsLabel3.grid(row=3, column=0, columnspan=1, padx=10, pady=20, sticky="")
+        self.serialCommsLabel3.grid(row=4, column=0, columnspan=1, padx=10, pady=20, sticky="")
         self.serialCommsLabelValue3 = customtkinter.CTkLabel(self.serialCommsFrame, text="")
-        self.serialCommsLabelValue3.grid(row=7, column=0, columnspan=1, padx=10, pady=5, sticky="")
+        self.serialCommsLabelValue3.grid(row=5, column=0, columnspan=1, padx=10, pady=5, sticky="")
 
         self.serialCommsLabel4 = customtkinter.CTkLabel(self.serialCommsFrame, text="Channels: ")
-        self.serialCommsLabel4.grid(row=4, column=0, columnspan=1, padx=10, pady=20, sticky="")
+        self.serialCommsLabel4.grid(row=6, column=0, columnspan=1, padx=10, pady=20, sticky="")
         self.serialCommsLabelValue4 = customtkinter.CTkLabel(self.serialCommsFrame, text="")
-        self.serialCommsLabelValue4.grid(row=9, column=0, columnspan=1, padx=10, pady=5, sticky="")
+        self.serialCommsLabelValue4.grid(row=7, column=0, columnspan=1, padx=10, pady=5, sticky="")
+
+
 
        # TREE VIEW ADDED HERE
         self.treeview = ttk.Treeview(self, height=6)
         self.treeview.grid(row=0, column=1, columnspan=1, padx=(20, 0), pady=(50, 30), sticky="nsew")
-        #self.treeview.bind("<<TreeviewSelect>>", self.on_treeview_select)
-        
-
+        self.treeview.bind("<<TreeviewSelect>>", self.on_treeview_select)
+  
         # Add a vertical scrollbar to the treeview
         vscroll = ttk.Scrollbar(self.treeview, orient="vertical", command=self.treeview.yview)
         vscroll.pack(side="right", fill="y")
@@ -166,48 +169,38 @@ class App(customtkinter.CTk):
         self.clearTextBox1.grid(row=3, column=0, padx=20, pady=(10, 10))
        
       # create uioptions frame
-        self.combobox_1.set("command list")
-        self.combobox_fire.set("fire list")
+        self.combobox_1.set("Select Command")
+        self.combobox_fire.set("")
 
-    #def on_treeview_select(self, event):
-    #    selected_item = self.treeview.selection()  # Get the currently selected item
-    #    print(f"Selected item: {selected_item}")
 
-    #    if selected_item:
-    #        item_text = self.treeview.item(selected_item, "text")
-    #        print(f"Item text: {item_text}")
+    def on_treeview_select(self, event):
+        # Get the selected item's ID
+        selected_item_id = (int(self.treeview.selection()[0]) - 1) // 4
+        print(f"Selected item ID: {selected_item_id}")
 
-    #        if " " in item_text:
-    #            device_type = item_text.split(" ")[0]
-    #            device_data = item_text.split(" ")[1]
+        # Get the corresponding data from the arraylist
+        child_data_list = self.arraylist[0]['child_data_list']
 
-    #            # Update Device Type label
-    #            self.serialCommsLabelValue0["text"] = f"{device_type} {device_data}"
-    #            children = self.treeview.get_children(selected_item)  # Get the children of the selected item
-    #    if children:
-    #        for child in children:
-    #            child_text = self.treeview.item(child, "text")
-    #            print(f"Child text: {child_text}")
-    #            if "Sector: " in child_text:
-    #                self.serialCommsLabelValue1["text"] = child_text.split("Sector: ")[1]
-    #            elif "Sector State: " in child_text:
-    #                self.serialCommsLabelValue2["text"] = child_text.split("Sector State: ")[1]
-    #            elif "Channels: " in child_text:
-    #                self.serialCommsLabelValue3["text"] = child_text.split("Channels: ")[1]
-    #            else:
-    #                self.serialCommsLabelValue1["text"] = ""
-    #                self.serialCommsLabelValue2["text"] = ""
-    #                self.serialCommsLabelValue3["text"] = ""
-    #        else:
-    #            self.serialCommsLabelValue0["text"] = ""
-    #            self.serialCommsLabelValue1["text"] = ""
-    #            self.serialCommsLabelValue2["text"] = ""
-    #            self.serialCommsLabelValue3["text"] = ""
+        # Check if the index is within the bounds of the list
+        if 0 <= selected_item_id < len(child_data_list):
+            selected_data = child_data_list[selected_item_id]
+            print(f"Selected data: {selected_data}")
 
+            # Update the labels with the selected data
+            self.serialCommsLabelValue2.configure(text=selected_data['sector'])
+            self.serialCommsLabelValue4.configure(text=selected_data['anal'])
+            sector_state = selected_data['sector_state']
+            self.serialCommsLabelValue3.configure(text=(str(sector_state) if sector_state else "N/A"))
+        else:
+            print("Index out of range.")
 
 
     def showTextboxWindow(self):
-        if not hasattr(self, 'textboxWindow'):
+        if hasattr(self, 'textboxWindow') and self.textboxWindow.winfo_exists():
+            # Use existing window
+            self.textboxWindow.deiconify()
+        else:
+            # Create new window
             self.textboxWindow = Toplevel(self)
             self.textboxWindow.title("Command Terminal")
             self.textboxWindow.geometry("450x425")
@@ -290,13 +283,27 @@ class App(customtkinter.CTk):
         selected_text = self.combobox_fire.get()
         selected_item = self.treeview.selection()
 
+        self.command_mapping = {
+            "Heat 1 Deg": "5",
+            "Heat 3 Deg": "4",
+            "Heat 5 Deg": "3",
+            "Heat 10 Deg": "2",
+            "Heat 20 Deg": "1",
+            "Heat 30 Deg": "0",
+            "TS1 Fire": "15",
+            "TS2 Fire": "16",
+            "TS3 Fire": "17",
+            "TS4 Fire": "18",
+            "TS5 Fire": "19",
+            "TS8 Fire": "20"
+        }
+
         if selected_text in ["Optical Fire", "MCP"]:
             if selected_text == "Optical Fire":
                 self.mySerial.write("an 1 1 60\r\n".encode())
             elif selected_text == "MCP":
                 self.mySerial.write("an 1 6 MCPFIRE\r\n".encode())
-                #The 2 above are whats sent - need to make the device dynamic in MCP so an [value] 6 MCP
-                #Optical is device, channel then 60 - so make the deivce dynamic so an [value] 1 60
+        
             if not hasattr(self, 'textboxWindow'):
                 self.showTextboxWindow()
 
@@ -306,26 +313,23 @@ class App(customtkinter.CTk):
                 item_id = self.treeview.item(selected_item)["text"]
                 if item_id.split(" ")[0].isdigit():
                     item_id = int(item_id.split(" ")[0])
-                    selected_command = "play " + str(item_id) + " 0\r\n"
-                    self.mySerial.write(selected_command.encode())
-                    print("Result:", selected_command)
-                    self.showTextboxWindow()
-                    self.serialReceiveTextBox.insert('end', self.mySerial.serialDataReceived.encode())
+                
+                    # Create the dialog window
+                    dialog = Toplevel(self)
+                    dialog.title("Select option")
+                    # Create the CTkComboBox widget
+                    options = list(self.command_mapping.keys())
+                    playFireBtn = customtkinter.CTkComboBox(dialog, values=options)
+                    playFireBtn.pack()
+                    btn_other = customtkinter.CTkButton(dialog, text="Start Fire", command=lambda: self.sendOption(playFireBtn.get(), dialog, item_id))
+                    btn_other.pack()
                 else:
                     print("Selected item does not contain a valid integer.")
             else:
-                # Create the dialog window
-                dialog = Toplevel(self)
-                dialog.title("Select option")
-                # Create the CTkComboBox widget
-                options = ["Heat 1 Deg", "Heat 3 Deg", "Heat 5 Deg", "Heat 10 Deg", "Heat 20 Deg", "Heat 30 Deg", 
-                           "TS1 Fire", "TS2 Fire", "TS3 Fire", "TS4 Fire", "TS5 Fire", "TS6 Fire", "TS7 Fire","TS8 Fire"]
-                playFireBtn = customtkinter.CTkComboBox(dialog, values=options, command=lambda: self.sendOption(playFireBtn.get(), dialog))
-                playFireBtn.pack()
-                btn_other = customtkinter.CTkButton(dialog, text="Start Fire", command=lambda: self.sendOption(playFireBtn.get(), dialog))
-                btn_other.pack()
+                error_message = "Please load the list of devices and select a device."
+                messagebox.showerror("Error", error_message)
 
-    def sendOption(self, selected_text, dialog):
+    def sendOption(self, selected_text, dialog, item_id):
         if not hasattr(self, 'command_mapping'):
             error_message = "Please load the list of devices and select a device."
             messagebox.showerror("Error", error_message)
@@ -333,7 +337,7 @@ class App(customtkinter.CTk):
 
         selected_command = self.command_mapping.get(selected_text, None)
         if selected_command:
-            result = selected_command + "\r\n"
+            result = "play " + str(item_id) + " " + selected_command + "\r\n"
             self.mySerial.write(result.encode())
             print("Result:", result)
             self.showTextboxWindow()
@@ -341,6 +345,7 @@ class App(customtkinter.CTk):
             dialog.destroy()
         else:
             print("Selected text not found in command mapping.")
+
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)

@@ -21,6 +21,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="helperClasses.py" />
     <Compile Include="command_handler.py" />
     <Compile Include="GUI.py" />
     <Compile Include="serial_connection.py" />
